@@ -31,7 +31,7 @@ local success, err = pcall(function()
     local skeletonLines = {}
     local hasDrawing = (Drawing ~= nil and Drawing.new ~= nil)
 
-    -- Kilasik Multi-Fling Variables
+    -- Script Sense & Fling Variables
     local SelectedTargets = {}
     local PlayerCheckboxes = {}
     local FlingActive = false
@@ -163,7 +163,7 @@ local success, err = pcall(function()
 
     local _, openFlingMenuPCBtn = createUIElement(pcContainer, 237, "open fling menu", "Button")
 
-    -- Kilasik Multi-Fling Main Frame (Embedded and hidden by default)
+    -- Main Fling Frame (Embedded and hidden by default)
     local MainFrame = Instance.new("Frame")
     MainFrame.Size = UDim2.new(0, 300, 0, 350)
     MainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
@@ -183,10 +183,10 @@ local success, err = pcall(function()
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, -30, 1, 0)
     Title.BackgroundTransparency = 1
-    Title.Text = "KILASIK'S MULTI-FLING"
-    Title.TextColor3 = Color3.fromRGB(255, 80, 80)
-    Title.Font = Enum.Font.SourceSansBold
-    Title.TextSize = 18
+    Title.RichText = true
+    Title.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE FLING</font>'
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 15
     Title.Parent = TitleBar
 
     local CloseButton = Instance.new("TextButton")
@@ -475,7 +475,7 @@ local success, err = pcall(function()
     touchFlingLabel.MouseButton1Click:Connect(toggleTouchFling)
     touchFlingBtnLabel.MouseButton1Click:Connect(toggleTouchFling)
 
-    -- Kilasik Player List Logic
+    -- Player List Logic
     local function RefreshPlayerList()
         for _, child in pairs(PlayerScrollFrame:GetChildren()) do
             child:Destroy()
@@ -967,7 +967,7 @@ local success, err = pcall(function()
     refreshMenuTexts()
     updateStates()
     RefreshPlayerList()
-    print("[Script Sense] Успешно загружен с интегрированным Kilasik's Multi-Fling меню!")
+    print("[Script Sense] Успешно загружен с интегрированным Script Sense Fling меню!")
 end)
 
 if not success then
