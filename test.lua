@@ -208,7 +208,7 @@ local success, err = pcall(function()
     Title.Position = UDim2.new(0, 6, 0, 0)
     Title.BackgroundTransparency = 1
     Title.RichText = true
-    Title.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font>'
+    Title.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE MULTI FLING</font>'
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 13
     Title.TextXAlignment = Enum.TextXAlignment.Left
