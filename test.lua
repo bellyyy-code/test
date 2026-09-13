@@ -3,6 +3,7 @@ local success, err = pcall(function()
     local UserInputService = game:GetService("UserInputService")
     local RunService = game:GetService("RunService")
     local CoreGui = game:GetService("CoreGui")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
     local player = Players.LocalPlayer
     if not player then
@@ -16,7 +17,6 @@ local success, err = pcall(function()
     local godmodeEnabled = false
     local flyEnabled = false
     local skeletonEspEnabled = false
-    local touchFlingEnabled = false
     local flySpeed = 50
     local maxStuds = 10
 
@@ -37,6 +37,15 @@ local success, err = pcall(function()
     local FlingActive = false
     getgenv().OldPos = nil
     getgenv().FPDH = workspace.FallenPartsDestroyHeight
+
+    -- DuplexScripts Touch Fling Setup
+    if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
+        local detection = Instance.new("Decal")
+        detection.Name = "juisdfj0i32i0eidsuf0iok"
+        detection.Parent = ReplicatedStorage
+    end
+    local hiddenfling = false
+    local flingThread = nil
 
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ScriptSenseMultiFlingGUI"
@@ -148,7 +157,7 @@ local success, err = pcall(function()
     speedBoxStrokePC.Parent = speedTextBoxPC
 
     local _, skeletonLabel = createUIElement(pcContainer, 140, "skeleton: off | bind: x", "Button")
-    local _, touchFlingLabel = createUIElement(pcContainer, 175, "touchfling: off | bind: k", "Button")
+    local _, touchFlingOpenBtn = createUIElement(pcContainer, 175, "open touch fling menu", "Button")
 
     local menuHintLabel = Instance.new("TextLabel")
     menuHintLabel.Size = UDim2.new(0, 215, 0, 22)
@@ -163,22 +172,140 @@ local success, err = pcall(function()
 
     local _, openFlingMenuPCBtn = createUIElement(pcContainer, 237, "open multi fling menu", "Button")
 
+    -- Touch Fling GUI Window (DuplexScripts styled white/red)
+    local TouchFlingFrame = Instance.new("Frame")
+    TouchFlingFrame.Size = UDim2.new(0, 158, 0, 110)
+    TouchFlingFrame.Position = UDim2.new(0.5, 120, 0.5, -55)
+    TouchFlingFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    TouchFlingFrame.BorderSizePixel = 0
+    TouchFlingFrame.Active = true
+    TouchFlingFrame.Draggable = true
+    TouchFlingFrame.Visible = false
+    TouchFlingFrame.Parent = screenGui
+
+    local tfStroke = Instance.new("UIStroke")
+    tfStroke.Color = Color3.fromRGB(255, 255, 255)
+    tfStroke.Thickness = 2
+    tfStroke.Parent = TouchFlingFrame
+
+    local TFHeader = Instance.new("Frame")
+    TFHeader.Size = UDim2.new(1, 0, 0, 25)
+    TFHeader.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    TFHeader.BorderSizePixel = 0
+    TFHeader.Parent = TouchFlingFrame
+
+    local tfHeaderStroke = Instance.new("UIStroke")
+    tfHeaderStroke.Color = Color3.fromRGB(255, 255, 255)
+    tfHeaderStroke.Thickness = 1
+    tfHeaderStroke.Parent = TFHeader
+
+    local TFTitle = Instance.new("TextLabel")
+    TFTitle.Size = UDim2.new(1, -30, 1, 0)
+    TFTitle.Position = UDim2.new(0, 6, 0, 0)
+    TFTitle.BackgroundTransparency = 1
+    TFTitle.RichText = true
+    TFTitle.Text = '<font color="#FFFFFF">TOUCH</font> <font color="#FF0000">FLING</font>'
+    TFTitle.Font = Enum.Font.GothamBold
+    TFTitle.TextSize = 13
+    TFTitle.TextXAlignment = Enum.TextXAlignment.Left
+    TFTitle.Parent = TFHeader
+
+    local TFCloseBtn = Instance.new("TextButton")
+    TFCloseBtn.Size = UDim2.new(0, 25, 0, 25)
+    TFCloseBtn.Position = UDim2.new(1, -25, 0, 0)
+    TFCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    TFCloseBtn.BorderSizePixel = 0
+    TFCloseBtn.Text = "X"
+    TFCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFCloseBtn.Font = Enum.Font.GothamBold
+    TFCloseBtn.TextSize = 14
+    TFCloseBtn.Parent = TFHeader
+
+    local TFToggleBtn = Instance.new("TextButton")
+    TFToggleBtn.Size = UDim2.new(0, 121, 0, 37)
+    TFToggleBtn.Position = UDim2.new(0.5, -60, 0.45, 0)
+    TFToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    TFToggleBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    TFToggleBtn.BorderSizePixel = 0
+    TFToggleBtn.Text = "OFF"
+    TFToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFToggleBtn.Font = Enum.Font.GothamBold
+    TFToggleBtn.TextSize = 16
+    TFToggleBtn.Parent = TouchFlingFrame
+
+    local tfBtnStroke = Instance.new("UIStroke")
+    tfBtnStroke.Color = Color3.fromRGB(255, 255, 255)
+    tfBtnStroke.Thickness = 1
+    tfBtnStroke.Parent = TFToggleBtn
+
+    local function runHiddenFling()
+        local lp = Players.LocalPlayer
+        local c, hrp, vel, movel = nil, nil, nil, 0.1
+    
+        while hiddenfling do
+            RunService.Heartbeat:Wait()
+            c = lp.Character
+            hrp = c and c:FindFirstChild("HumanoidRootPart")
+    
+            if hrp then
+                vel = hrp.Velocity
+                hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                RunService.RenderStepped:Wait()
+                hrp.Velocity = vel
+                RunService.Stepped:Wait()
+                hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                movel = -movel
+            end
+        end
+    end
+
+    TFToggleBtn.MouseButton1Click:Connect(function()
+        hiddenfling = not hiddenfling
+        TFToggleBtn.Text = hiddenfling and "ON" or "OFF"
+        TFToggleBtn.TextColor3 = hiddenfling and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(255, 255, 255)
+
+        if hiddenfling then
+            flingThread = coroutine.create(runHiddenFling)
+            coroutine.resume(flingThread)
+        else
+            hiddenfling = false
+        end
+    end)
+
+    TFCloseBtn.MouseButton1Click:Connect(function()
+        TouchFlingFrame.Visible = false
+    end)
+
+    touchFlingOpenBtn.MouseButton1Click:Connect(function()
+        TouchFlingFrame.Visible = not TouchFlingFrame.Visible
+    end)
+
     -- Main Fling Frame (Embedded and hidden by default)
     local MainFrame = Instance.new("Frame")
     MainFrame.Size = UDim2.new(0, 300, 0, 350)
     MainFrame.Position = UDim2.new(0.5, -150, 0.5, -175)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
     MainFrame.Draggable = true
     MainFrame.Visible = false
     MainFrame.Parent = screenGui
 
+    local mainFrameStroke = Instance.new("UIStroke")
+    mainFrameStroke.Color = Color3.fromRGB(255, 255, 255)
+    mainFrameStroke.Thickness = 2
+    mainFrameStroke.Parent = MainFrame
+
     local TitleBar = Instance.new("Frame")
     TitleBar.Size = UDim2.new(1, 0, 0, 30)
     TitleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     TitleBar.BorderSizePixel = 0
     TitleBar.Parent = MainFrame
+
+    local TitleBarStroke = Instance.new("UIStroke")
+    TitleBarStroke.Color = Color3.fromRGB(255, 255, 255)
+    TitleBarStroke.Thickness = 1
+    TitleBarStroke.Parent = TitleBar
 
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, -30, 1, 0)
@@ -198,8 +325,8 @@ local success, err = pcall(function()
     CloseButton.BorderSizePixel = 0
     CloseButton.Text = "X"
     CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    CloseButton.Font = Enum.Font.SourceSansBold
-    CloseButton.TextSize = 18
+    CloseButton.Font = Enum.Font.GothamBold
+    CloseButton.TextSize = 16
     CloseButton.Parent = TitleBar
 
     local StatusLabel = Instance.new("TextLabel")
@@ -208,17 +335,22 @@ local success, err = pcall(function()
     StatusLabel.BackgroundTransparency = 1
     StatusLabel.Text = "Select targets to multi fling"
     StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StatusLabel.Font = Enum.Font.SourceSans
-    StatusLabel.TextSize = 16
+    StatusLabel.Font = Enum.Font.Gotham
+    StatusLabel.TextSize = 14
     StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
     StatusLabel.Parent = MainFrame
 
     local SelectionFrame = Instance.new("Frame")
     SelectionFrame.Position = UDim2.new(0, 10, 0, 70)
     SelectionFrame.Size = UDim2.new(1, -20, 0, 200)
-    SelectionFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    SelectionFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     SelectionFrame.BorderSizePixel = 0
     SelectionFrame.Parent = MainFrame
+
+    local selStroke = Instance.new("UIStroke")
+    selStroke.Color = Color3.fromRGB(255, 255, 255)
+    selStroke.Thickness = 1
+    selStroke.Parent = SelectionFrame
 
     local PlayerScrollFrame = Instance.new("ScrollingFrame")
     PlayerScrollFrame.Position = UDim2.new(0, 5, 0, 5)
@@ -232,46 +364,66 @@ local success, err = pcall(function()
     local StartButton = Instance.new("TextButton")
     StartButton.Position = UDim2.new(0, 10, 0, 280)
     StartButton.Size = UDim2.new(0.5, -15, 0, 40)
-    StartButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+    StartButton.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
     StartButton.BorderSizePixel = 0
     StartButton.Text = "START MULTI FLING"
     StartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StartButton.Font = Enum.Font.SourceSansBold
-    StartButton.TextSize = 16
+    StartButton.Font = Enum.Font.GothamBold
+    StartButton.TextSize = 13
     StartButton.Parent = MainFrame
+
+    local startStroke = Instance.new("UIStroke")
+    startStroke.Color = Color3.fromRGB(255, 255, 255)
+    startStroke.Thickness = 1
+    startStroke.Parent = StartButton
 
     local StopButton = Instance.new("TextButton")
     StopButton.Position = UDim2.new(0.5, 5, 0, 280)
     StopButton.Size = UDim2.new(0.5, -15, 0, 40)
-    StopButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    StopButton.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
     StopButton.BorderSizePixel = 0
     StopButton.Text = "STOP FLING"
     StopButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    StopButton.Font = Enum.Font.SourceSansBold
-    StopButton.TextSize = 18
+    StopButton.Font = Enum.Font.GothamBold
+    StopButton.TextSize = 13
     StopButton.Parent = MainFrame
+
+    local stopStroke = Instance.new("UIStroke")
+    stopStroke.Color = Color3.fromRGB(255, 255, 255)
+    stopStroke.Thickness = 1
+    stopStroke.Parent = StopButton
 
     local SelectAllButton = Instance.new("TextButton")
     SelectAllButton.Position = UDim2.new(0, 10, 0, 330)
     SelectAllButton.Size = UDim2.new(0.5, -15, 0, 30)
-    SelectAllButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    SelectAllButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     SelectAllButton.BorderSizePixel = 0
     SelectAllButton.Text = "SELECT ALL"
     SelectAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    SelectAllButton.Font = Enum.Font.SourceSans
-    SelectAllButton.TextSize = 14
+    SelectAllButton.Font = Enum.Font.Gotham
+    SelectAllButton.TextSize = 12
     SelectAllButton.Parent = MainFrame
+
+    local selAllStroke = Instance.new("UIStroke")
+    selAllStroke.Color = Color3.fromRGB(255, 255, 255)
+    selAllStroke.Thickness = 1
+    selAllStroke.Parent = SelectAllButton
 
     local DeselectAllButton = Instance.new("TextButton")
     DeselectAllButton.Position = UDim2.new(0.5, 5, 0, 330)
     DeselectAllButton.Size = UDim2.new(0.5, -15, 0, 30)
-    DeselectAllButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    DeselectAllButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
     DeselectAllButton.BorderSizePixel = 0
     DeselectAllButton.Text = "DESELECT ALL"
     DeselectAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    DeselectAllButton.Font = Enum.Font.SourceSans
-    DeselectAllButton.TextSize = 14
+    DeselectAllButton.Font = Enum.Font.Gotham
+    DeselectAllButton.TextSize = 12
     DeselectAllButton.Parent = MainFrame
+
+    local deselAllStroke = Instance.new("UIStroke")
+    deselAllStroke.Color = Color3.fromRGB(255, 255, 255)
+    deselAllStroke.Thickness = 1
+    deselAllStroke.Parent = DeselectAllButton
 
     -- Keybinds Settings Menu
     local settingsMenu = Instance.new("Frame")
@@ -368,8 +520,35 @@ local success, err = pcall(function()
     toggleFlingBtn.Text = "multi fling"
     toggleFlingBtn.Parent = toggleFlingMenuContainer
 
+    -- Second Mobile Button for Touch Fling Window
+    local toggleTouchFlingMenuContainer = Instance.new("Frame")
+    toggleTouchFlingMenuContainer.Size = UDim2.new(0, 110, 0, 30)
+    toggleTouchFlingMenuContainer.Position = UDim2.new(0, 230, 0, 42)
+    toggleTouchFlingMenuContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    toggleTouchFlingMenuContainer.Visible = isMobile
+    toggleTouchFlingMenuContainer.Parent = screenGui
+
+    local ttfmStroke = Instance.new("UIStroke")
+    ttfmStroke.Color = Color3.fromRGB(255, 255, 255)
+    ttfmStroke.Thickness = 2
+    ttfmStroke.Parent = toggleTouchFlingMenuContainer
+
+    local toggleTouchFlingBtn = Instance.new("TextButton")
+    toggleTouchFlingBtn.Size = UDim2.new(1, -10, 1, 0)
+    toggleTouchFlingBtn.Position = UDim2.new(0, 6, 0, 0)
+    toggleTouchFlingBtn.BackgroundTransparency = 1
+    toggleTouchFlingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleTouchFlingBtn.TextSize = 13
+    toggleTouchFlingBtn.Font = Enum.Font.Gotham
+    toggleTouchFlingBtn.Text = "touch fling"
+    toggleTouchFlingBtn.Parent = toggleTouchFlingMenuContainer
+
+    toggleTouchFlingBtn.MouseButton1Click:Connect(function()
+        TouchFlingFrame.Visible = not TouchFlingFrame.Visible
+    end)
+
     local mobilePanel = Instance.new("Frame")
-    mobilePanel.Size = UDim2.new(0, 160, 0, 245)
+    mobilePanel.Size = UDim2.new(0, 160, 0, 210)
     mobilePanel.Position = UDim2.new(0, 10, 0, 77)
     mobilePanel.BackgroundTransparency = 1
     mobilePanel.Visible = false
@@ -380,7 +559,6 @@ local success, err = pcall(function()
     local _, godmodeBtnLabel = createUIElement(mobilePanel, 70, "enable godmode", "Button", 160)
     local _, flyBtnLabel = createUIElement(mobilePanel, 105, "enable fly", "Button", 160)
     local _, skeletonBtnLabel = createUIElement(mobilePanel, 140, "enable skeleton", "Button", 160)
-    local _, touchFlingBtnLabel = createUIElement(mobilePanel, 175, "touchfling: off | bind: k", "Button", 160)
 
     toggleMenuBtn.MouseButton1Click:Connect(function()
         mobilePanel.Visible = not mobilePanel.Visible
@@ -417,8 +595,6 @@ local success, err = pcall(function()
         flyLabel.Text = "fly: " .. (flyEnabled and "on" or "off") .. " | bind: " .. fName
         skeletonLabel.Text = "skeleton: " .. (skeletonEspEnabled and "on" or "off") .. " | bind: " .. sName
         skeletonBtnLabel.Text = "skeleton: " .. (skeletonEspEnabled and "on" or "off") .. " | bind: " .. sName
-        touchFlingLabel.Text = "touchfling: " .. (touchFlingEnabled and "on" or "off") .. " | bind: k"
-        touchFlingBtnLabel.Text = "touchfling: " .. (touchFlingEnabled and "on" or "off") .. " | bind: k"
     end
 
     local bodyVelocity, bodyGyro
@@ -470,14 +646,10 @@ local success, err = pcall(function()
         updateStates() 
     end
 
-    local function toggleTouchFling() touchFlingEnabled = not touchFlingEnabled updateStates() end
-
     skeletonLabel.MouseButton1Click:Connect(toggleSkeleton)
     skeletonBtnLabel.MouseButton1Click:Connect(toggleSkeleton)
-    touchFlingLabel.MouseButton1Click:Connect(toggleTouchFling)
-    touchFlingBtnLabel.MouseButton1Click:Connect(toggleTouchFling)
 
-    -- Player List Logic
+    -- Player List Logic for Multi Fling
     local function RefreshPlayerList()
         for _, child in pairs(PlayerScrollFrame:GetChildren()) do
             child:Destroy()
@@ -493,14 +665,14 @@ local success, err = pcall(function()
                 local PlayerEntry = Instance.new("Frame")
                 PlayerEntry.Size = UDim2.new(1, -10, 0, 30)
                 PlayerEntry.Position = UDim2.new(0, 5, 0, yPosition)
-                PlayerEntry.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                PlayerEntry.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
                 PlayerEntry.BorderSizePixel = 0
                 PlayerEntry.Parent = PlayerScrollFrame
                 
                 local Checkbox = Instance.new("TextButton")
                 Checkbox.Size = UDim2.new(0, 24, 0, 24)
                 Checkbox.Position = UDim2.new(0, 3, 0.5, -12)
-                Checkbox.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                Checkbox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
                 Checkbox.BorderSizePixel = 0
                 Checkbox.Text = ""
                 Checkbox.Parent = PlayerEntry
@@ -521,8 +693,8 @@ local success, err = pcall(function()
                 NameLabel.BackgroundTransparency = 1
                 NameLabel.Text = pTarget.Name
                 NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-                NameLabel.TextSize = 16
-                NameLabel.Font = Enum.Font.SourceSans
+                NameLabel.TextSize = 15
+                NameLabel.Font = Enum.Font.Gotham
                 NameLabel.TextXAlignment = Enum.TextXAlignment.Left
                 NameLabel.Parent = PlayerEntry
                 
@@ -780,8 +952,6 @@ local success, err = pcall(function()
             toggleFly()
         elseif input.KeyCode == skeletonKey then
             toggleSkeleton()
-        elseif input.KeyCode == Enum.KeyCode.K then
-            toggleTouchFling()
         end
     end)
 
@@ -918,24 +1088,6 @@ local success, err = pcall(function()
                 removeSkeleton(p)
             end
         end
-
-        if touchFlingEnabled then
-            local char = player.Character
-            if char then
-                local root = char:FindFirstChild("HumanoidRootPart")
-                if root then
-                    for _, p in ipairs(Players:GetPlayers()) do
-                        if p ~= player and p.Character then
-                            local enemyRoot = p.Character:FindFirstChild("HumanoidRootPart")
-                            if enemyRoot and (root.Position - enemyRoot.Position).Magnitude < 5 then
-                                root.AssemblyLinearVelocity = Vector3.new(30000, 30000, 30000)
-                                root.AssemblyAngularVelocity = Vector3.new(30000, 30000, 30000)
-                            end
-                        end
-                    end
-                end
-            end
-        end
     end)
 
     Players.PlayerAdded:Connect(function(p)
@@ -969,7 +1121,7 @@ local success, err = pcall(function()
     refreshMenuTexts()
     updateStates()
     RefreshPlayerList()
-    print("[Script Sense] Успешно загружен с интегрированным Script Sense Multi Fling меню!")
+    print("[Script Sense] Успешно загружен с интегрированным DuplexScripts Touch Fling!")
 end)
 
 if not success then
