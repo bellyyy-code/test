@@ -17,7 +17,6 @@ local success, err = pcall(function()
     local godmodeEnabled = false
     local flyEnabled = false
     local skeletonEspEnabled = false
-    local touchFlingEnabled = false
     local flySpeed = 50
     local maxStuds = 10
 
@@ -26,7 +25,6 @@ local success, err = pcall(function()
     local godmodeKey = Enum.KeyCode.C
     local flyKey = Enum.KeyCode.F
     local skeletonKey = Enum.KeyCode.X
-    local touchFlingKey = Enum.KeyCode.K
     local menuKey = Enum.KeyCode.Backquote
 
     local listeningFor = nil
@@ -40,13 +38,14 @@ local success, err = pcall(function()
     getgenv().OldPos = nil
     getgenv().FPDH = workspace.FallenPartsDestroyHeight
 
-    -- Touch Fling Setup
+    -- DuplexScripts Touch Fling Setup
     if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
         local detection = Instance.new("Decal")
         detection.Name = "juisdfj0i32i0eidsuf0iok"
         detection.Parent = ReplicatedStorage
     end
-    local touchFlingThread = nil
+    local hiddenfling = false
+    local flingThread = nil
 
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "ScriptSenseMultiFlingGUI"
@@ -78,9 +77,6 @@ local success, err = pcall(function()
         container.Size = UDim2.new(0, customWidth or 215, 0, 30)
         container.Position = UDim2.new(0, 0, 0, posY)
         container.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        container.Parent = container
-
-        -- Fixing parent assignment
         container.Parent = parent
 
         local stroke = Instance.new("UIStroke")
@@ -112,7 +108,7 @@ local success, err = pcall(function()
     end
 
     local pcContainer = Instance.new("Frame")
-    pcContainer.Size = UDim2.new(0, 215, 0, 310)
+    pcContainer.Size = UDim2.new(0, 215, 0, 275)
     pcContainer.Position = UDim2.new(0, 10, 0, 40)
     pcContainer.BackgroundTransparency = 1
     pcContainer.Visible = not isMobile
@@ -161,11 +157,11 @@ local success, err = pcall(function()
     speedBoxStrokePC.Parent = speedTextBoxPC
 
     local _, skeletonLabel = createUIElement(pcContainer, 140, "skeleton: off | bind: x", "Button")
-    local _, touchFlingLabel = createUIElement(pcContainer, 175, "touchfling: off | bind: k", "Button")
+    local _, touchFlingOpenBtn = createUIElement(pcContainer, 175, "open touch fling menu", "Button")
 
     local menuHintLabel = Instance.new("TextLabel")
     menuHintLabel.Size = UDim2.new(0, 215, 0, 22)
-    menuHintLabel.Position = UDim2.new(0, 0, 0, 215)
+    menuHintLabel.Position = UDim2.new(0, 0, 0, 210)
     menuHintLabel.BackgroundTransparency = 1
     menuHintLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
     menuHintLabel.TextSize = 13
@@ -174,7 +170,115 @@ local success, err = pcall(function()
     menuHintLabel.TextXAlignment = Enum.TextXAlignment.Left
     menuHintLabel.Parent = pcContainer
 
-    local _, openFlingMenuPCBtn = createUIElement(pcContainer, 245, "open multi fling menu", "Button")
+    local _, openFlingMenuPCBtn = createUIElement(pcContainer, 237, "open multi fling menu", "Button")
+
+    -- Touch Fling GUI Window (DuplexScripts styled white/red)
+    local TouchFlingFrame = Instance.new("Frame")
+    TouchFlingFrame.Size = UDim2.new(0, 158, 0, 110)
+    TouchFlingFrame.Position = UDim2.new(0.5, 120, 0.5, -55)
+    TouchFlingFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    TouchFlingFrame.BorderSizePixel = 0
+    TouchFlingFrame.Active = true
+    TouchFlingFrame.Draggable = true
+    TouchFlingFrame.Visible = false
+    TouchFlingFrame.Parent = screenGui
+
+    local tfStroke = Instance.new("UIStroke")
+    tfStroke.Color = Color3.fromRGB(255, 255, 255)
+    tfStroke.Thickness = 2
+    tfStroke.Parent = TouchFlingFrame
+
+    local TFHeader = Instance.new("Frame")
+    TFHeader.Size = UDim2.new(1, 0, 0, 25)
+    TFHeader.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    TFHeader.BorderSizePixel = 0
+    TFHeader.Parent = TouchFlingFrame
+
+    local tfHeaderStroke = Instance.new("UIStroke")
+    tfHeaderStroke.Color = Color3.fromRGB(255, 255, 255)
+    tfHeaderStroke.Thickness = 1
+    tfHeaderStroke.Parent = TFHeader
+
+    local TFTitle = Instance.new("TextLabel")
+    TFTitle.Size = UDim2.new(1, -30, 1, 0)
+    TFTitle.Position = UDim2.new(0, 6, 0, 0)
+    TFTitle.BackgroundTransparency = 1
+    TFTitle.RichText = true
+    TFTitle.Text = '<font color="#FFFFFF">TOUCH</font> <font color="#FF0000">FLING</font>'
+    TFTitle.Font = Enum.Font.GothamBold
+    TFTitle.TextSize = 13
+    TFTitle.TextXAlignment = Enum.TextXAlignment.Left
+    TFTitle.Parent = TFHeader
+
+    local TFCloseBtn = Instance.new("TextButton")
+    TFCloseBtn.Size = UDim2.new(0, 25, 0, 25)
+    TFCloseBtn.Position = UDim2.new(1, -25, 0, 0)
+    TFCloseBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    TFCloseBtn.BorderSizePixel = 0
+    TFCloseBtn.Text = "X"
+    TFCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFCloseBtn.Font = Enum.Font.GothamBold
+    TFCloseBtn.TextSize = 14
+    TFCloseBtn.Parent = TFHeader
+
+    local TFToggleBtn = Instance.new("TextButton")
+    TFToggleBtn.Size = UDim2.new(0, 121, 0, 37)
+    TFToggleBtn.Position = UDim2.new(0.5, -60, 0.45, 0)
+    TFToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    TFToggleBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    TFToggleBtn.BorderSizePixel = 0
+    TFToggleBtn.Text = "OFF"
+    TFToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TFToggleBtn.Font = Enum.Font.GothamBold
+    TFToggleBtn.TextSize = 16
+    TFToggleBtn.Parent = TouchFlingFrame
+
+    local tfBtnStroke = Instance.new("UIStroke")
+    tfBtnStroke.Color = Color3.fromRGB(255, 255, 255)
+    tfBtnStroke.Thickness = 1
+    tfBtnStroke.Parent = TFToggleBtn
+
+    local function runHiddenFling()
+        local lp = Players.LocalPlayer
+        local c, hrp, vel, movel = nil, nil, nil, 0.1
+    
+        while hiddenfling do
+            RunService.Heartbeat:Wait()
+            c = lp.Character
+            hrp = c and c:FindFirstChild("HumanoidRootPart")
+    
+            if hrp then
+                vel = hrp.Velocity
+                hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+                RunService.RenderStepped:Wait()
+                hrp.Velocity = vel
+                RunService.Stepped:Wait()
+                hrp.Velocity = vel + Vector3.new(0, movel, 0)
+                movel = -movel
+            end
+        end
+    end
+
+    TFToggleBtn.MouseButton1Click:Connect(function()
+        hiddenfling = not hiddenfling
+        TFToggleBtn.Text = hiddenfling and "ON" or "OFF"
+        TFToggleBtn.TextColor3 = hiddenfling and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(255, 255, 255)
+
+        if hiddenfling then
+            flingThread = coroutine.create(runHiddenFling)
+            coroutine.resume(flingThread)
+        else
+            hiddenfling = false
+        end
+    end)
+
+    TFCloseBtn.MouseButton1Click:Connect(function()
+        TouchFlingFrame.Visible = false
+    end)
+
+    touchFlingOpenBtn.MouseButton1Click:Connect(function()
+        TouchFlingFrame.Visible = not TouchFlingFrame.Visible
+    end)
 
     -- Main Fling Frame (Embedded and hidden by default)
     local MainFrame = Instance.new("Frame")
@@ -323,8 +427,8 @@ local success, err = pcall(function()
 
     -- Keybinds Settings Menu
     local settingsMenu = Instance.new("Frame")
-    settingsMenu.Size = UDim2.new(0, 240, 0, 315)
-    settingsMenu.Position = UDim2.new(0.5, -120, 0.5, -155)
+    settingsMenu.Size = UDim2.new(0, 240, 0, 280)
+    settingsMenu.Position = UDim2.new(0.5, -120, 0.5, -140)
     settingsMenu.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     settingsMenu.Visible = false
     settingsMenu.Parent = screenGui
@@ -379,8 +483,7 @@ local success, err = pcall(function()
     local btnGodmode = createBindButton(110, "godmode: c", "godmode")
     local btnFly = createBindButton(145, "fly: f", "fly")
     local btnSkeleton = createBindButton(180, "skeleton: x", "skeleton")
-    local btnTouchFling = createBindButton(215, "touchfling: k", "touchfling")
-    local btnMenu = createBindButton(250, "menu key: `", "menu")
+    local btnMenu = createBindButton(215, "menu key: `", "menu")
 
     local function refreshMenuTexts()
         btnWallhack.Text = "wallhack: " .. string.lower(wallhackKey.Name)
@@ -388,7 +491,6 @@ local success, err = pcall(function()
         btnGodmode.Text = "godmode: " .. string.lower(godmodeKey.Name)
         btnFly.Text = "fly: " .. string.lower(flyKey.Name)
         btnSkeleton.Text = "skeleton: " .. string.lower(skeletonKey.Name)
-        btnTouchFling.Text = "touchfling: " .. string.lower(touchFlingKey.Name)
         btnMenu.Text = "menu key: `"
     end
 
@@ -418,8 +520,35 @@ local success, err = pcall(function()
     toggleFlingBtn.Text = "multi fling"
     toggleFlingBtn.Parent = toggleFlingMenuContainer
 
+    -- Second Mobile Button for Touch Fling Window
+    local toggleTouchFlingMenuContainer = Instance.new("Frame")
+    toggleTouchFlingMenuContainer.Size = UDim2.new(0, 110, 0, 30)
+    toggleTouchFlingMenuContainer.Position = UDim2.new(0, 230, 0, 42)
+    toggleTouchFlingMenuContainer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    toggleTouchFlingMenuContainer.Visible = isMobile
+    toggleTouchFlingMenuContainer.Parent = screenGui
+
+    local ttfmStroke = Instance.new("UIStroke")
+    ttfmStroke.Color = Color3.fromRGB(255, 255, 255)
+    ttfmStroke.Thickness = 2
+    ttfmStroke.Parent = toggleTouchFlingMenuContainer
+
+    local toggleTouchFlingBtn = Instance.new("TextButton")
+    toggleTouchFlingBtn.Size = UDim2.new(1, -10, 1, 0)
+    toggleTouchFlingBtn.Position = UDim2.new(0, 6, 0, 0)
+    toggleTouchFlingBtn.BackgroundTransparency = 1
+    toggleTouchFlingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    toggleTouchFlingBtn.TextSize = 13
+    toggleTouchFlingBtn.Font = Enum.Font.Gotham
+    toggleTouchFlingBtn.Text = "touch fling"
+    toggleTouchFlingBtn.Parent = toggleTouchFlingMenuContainer
+
+    toggleTouchFlingBtn.MouseButton1Click:Connect(function()
+        TouchFlingFrame.Visible = not TouchFlingFrame.Visible
+    end)
+
     local mobilePanel = Instance.new("Frame")
-    mobilePanel.Size = UDim2.new(0, 160, 0, 245)
+    mobilePanel.Size = UDim2.new(0, 160, 0, 210)
     mobilePanel.Position = UDim2.new(0, 10, 0, 77)
     mobilePanel.BackgroundTransparency = 1
     mobilePanel.Visible = false
@@ -430,7 +559,6 @@ local success, err = pcall(function()
     local _, godmodeBtnLabel = createUIElement(mobilePanel, 70, "enable godmode", "Button", 160)
     local _, flyBtnLabel = createUIElement(mobilePanel, 105, "enable fly", "Button", 160)
     local _, skeletonBtnLabel = createUIElement(mobilePanel, 140, "enable skeleton", "Button", 160)
-    local _, touchFlingBtnLabel = createUIElement(mobilePanel, 175, "enable touchfling", "Button", 160)
 
     toggleMenuBtn.MouseButton1Click:Connect(function()
         mobilePanel.Visible = not mobilePanel.Visible
@@ -460,17 +588,13 @@ local success, err = pcall(function()
         local gName = string.lower(godmodeKey.Name)
         local fName = string.lower(flyKey.Name)
         local sName = string.lower(skeletonKey.Name)
-        local tfName = string.lower(touchFlingKey.Name)
 
         wallhackLabel.Text = "wallhack: " .. (noclipEnabled and "on" or "off") .. " | bind: " .. wName
         aimbotLabel.Text = "aimbot: " .. (aimbotEnabled and "on" or "off") .. " | bind: " .. aName
         godmodeLabel.Text = "godmode: " .. (godmodeEnabled and "on" or "off") .. " | bind: " .. gName
         flyLabel.Text = "fly: " .. (flyEnabled and "on" or "off") .. " | bind: " .. fName
         skeletonLabel.Text = "skeleton: " .. (skeletonEspEnabled and "on" or "off") .. " | bind: " .. sName
-        touchFlingLabel.Text = "touchfling: " .. (touchFlingEnabled and "on" or "off") .. " | bind: " .. tfName
-        
         skeletonBtnLabel.Text = "skeleton: " .. (skeletonEspEnabled and "on" or "off") .. " | bind: " .. sName
-        touchFlingBtnLabel.Text = "touchfling: " .. (touchFlingEnabled and "on" or "off") .. " | bind: " .. tfName
     end
 
     local bodyVelocity, bodyGyro
@@ -503,37 +627,6 @@ local success, err = pcall(function()
         updateStates()
     end
 
-    local function runTouchFling()
-        local c, hrp, vel, movel = nil, nil, nil, 0.1
-        while touchFlingEnabled do
-            RunService.Heartbeat:Wait()
-            c = player.Character
-            hrp = c and c:FindFirstChild("HumanoidRootPart")
-
-            if hrp then
-                vel = hrp.Velocity
-                hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
-                RunService.RenderStepped:Wait()
-                hrp.Velocity = vel
-                RunService.Stepped:Wait()
-                hrp.Velocity = vel + Vector3.new(0, movel, 0)
-                movel = -movel
-            end
-        end
-    end
-
-    local function toggleTouchFling()
-        touchFlingEnabled = not touchFlingEnabled
-        updateStates()
-
-        if touchFlingEnabled then
-            touchFlingThread = coroutine.create(runTouchFling)
-            coroutine.resume(touchFlingThread)
-        else
-            touchFlingEnabled = false
-        end
-    end
-
     local function removeSkeleton(p)
         if skeletonLines[p] then
             for _, line in pairs(skeletonLines[p]) do
@@ -555,8 +648,6 @@ local success, err = pcall(function()
 
     skeletonLabel.MouseButton1Click:Connect(toggleSkeleton)
     skeletonBtnLabel.MouseButton1Click:Connect(toggleSkeleton)
-    touchFlingLabel.MouseButton1Click:Connect(toggleTouchFling)
-    touchFlingBtnLabel.MouseButton1Click:Connect(toggleTouchFling)
 
     -- Player List Logic for Multi Fling
     local function RefreshPlayerList()
@@ -837,7 +928,6 @@ local success, err = pcall(function()
                     elseif listeningFor == "godmode" then godmodeKey = input.KeyCode
                     elseif listeningFor == "fly" then flyKey = input.KeyCode
                     elseif listeningFor == "skeleton" then skeletonKey = input.KeyCode
-                    elseif listeningFor == "touchfling" then touchFlingKey = input.KeyCode
                     elseif listeningFor == "menu" then menuKey = input.KeyCode
                     end
                 end
@@ -862,8 +952,6 @@ local success, err = pcall(function()
             toggleFly()
         elseif input.KeyCode == skeletonKey then
             toggleSkeleton()
-        elseif input.KeyCode == touchFlingKey then
-            toggleTouchFling()
         end
     end)
 
@@ -1033,7 +1121,7 @@ local success, err = pcall(function()
     refreshMenuTexts()
     updateStates()
     RefreshPlayerList()
-    print("[Script Sense] Успешно загружен с интегрированным Touch Fling на клавишу K!")
+    print("[Script Sense] Успешно загружен с интегрированным DuplexScripts Touch Fling!")
 end)
 
 if not success then
