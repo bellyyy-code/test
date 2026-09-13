@@ -31,7 +31,7 @@ local success, err = pcall(function()
     local skeletonLines = {}
     local hasDrawing = (Drawing ~= nil and Drawing.new ~= nil)
 
-    -- Script Sense & Fling Variables
+    -- Script Sense & Multi Fling Variables
     local SelectedTargets = {}
     local PlayerCheckboxes = {}
     local FlingActive = false
@@ -39,7 +39,7 @@ local success, err = pcall(function()
     getgenv().FPDH = workspace.FallenPartsDestroyHeight
 
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "ScriptSenseCombinedGUI"
+    screenGui.Name = "ScriptSenseMultiFlingGUI"
     screenGui.ResetOnSpawn = false
     
     local successGui, parentGui = pcall(function()
@@ -53,13 +53,13 @@ local success, err = pcall(function()
     local isMobile = UserInputService.TouchEnabled
 
     local headerLabel = Instance.new("TextLabel")
-    headerLabel.Size = UDim2.new(0, 215, 0, 25)
+    headerLabel.Size = UDim2.new(0, 260, 0, 25)
     headerLabel.Position = UDim2.new(0, 10, 0, 10)
     headerLabel.BackgroundTransparency = 1
-    headerLabel.TextSize = 18
+    headerLabel.TextSize = 16
     headerLabel.Font = Enum.Font.GothamBold
     headerLabel.RichText = true
-    headerLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font>'
+    headerLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE MULTI FLING</font>'
     headerLabel.TextXAlignment = Enum.TextXAlignment.Left
     headerLabel.Parent = screenGui
 
@@ -161,7 +161,7 @@ local success, err = pcall(function()
     menuHintLabel.TextXAlignment = Enum.TextXAlignment.Left
     menuHintLabel.Parent = pcContainer
 
-    local _, openFlingMenuPCBtn = createUIElement(pcContainer, 237, "open fling menu", "Button")
+    local _, openFlingMenuPCBtn = createUIElement(pcContainer, 237, "open multi fling menu", "Button")
 
     -- Main Fling Frame (Embedded and hidden by default)
     local MainFrame = Instance.new("Frame")
@@ -182,11 +182,13 @@ local success, err = pcall(function()
 
     local Title = Instance.new("TextLabel")
     Title.Size = UDim2.new(1, -30, 1, 0)
+    Title.Position = UDim2.new(0, 6, 0, 0)
     Title.BackgroundTransparency = 1
     Title.RichText = true
-    Title.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE FLING</font>'
+    Title.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE MULTI FLING</font>'
     Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 15
+    Title.TextSize = 13
+    Title.TextXAlignment = Enum.TextXAlignment.Left
     Title.Parent = TitleBar
 
     local CloseButton = Instance.new("TextButton")
@@ -204,7 +206,7 @@ local success, err = pcall(function()
     StatusLabel.Position = UDim2.new(0, 10, 0, 40)
     StatusLabel.Size = UDim2.new(1, -20, 0, 25)
     StatusLabel.BackgroundTransparency = 1
-    StatusLabel.Text = "Select targets to fling"
+    StatusLabel.Text = "Select targets to multi fling"
     StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     StatusLabel.Font = Enum.Font.SourceSans
     StatusLabel.TextSize = 16
@@ -232,10 +234,10 @@ local success, err = pcall(function()
     StartButton.Size = UDim2.new(0.5, -15, 0, 40)
     StartButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
     StartButton.BorderSizePixel = 0
-    StartButton.Text = "START FLING"
+    StartButton.Text = "START MULTI FLING"
     StartButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     StartButton.Font = Enum.Font.SourceSansBold
-    StartButton.TextSize = 18
+    StartButton.TextSize = 16
     StartButton.Parent = MainFrame
 
     local StopButton = Instance.new("TextButton")
@@ -363,7 +365,7 @@ local success, err = pcall(function()
     toggleFlingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     toggleFlingBtn.TextSize = 13
     toggleFlingBtn.Font = Enum.Font.Gotham
-    toggleFlingBtn.Text = "fling menu"
+    toggleFlingBtn.Text = "multi fling"
     toggleFlingBtn.Parent = toggleFlingMenuContainer
 
     local mobilePanel = Instance.new("Frame")
@@ -543,7 +545,7 @@ local success, err = pcall(function()
                     local count = 0
                     for _ in pairs(SelectedTargets) do count = count + 1 end
                     if FlingActive then
-                        StatusLabel.Text = "Flinging " .. count .. " target(s)"
+                        StatusLabel.Text = "Multi Flinging " .. count .. " target(s)"
                         StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
                     else
                         StatusLabel.Text = count .. " target(s) selected" 
@@ -705,7 +707,7 @@ local success, err = pcall(function()
         if count == 0 then return end
         
         FlingActive = true
-        StatusLabel.Text = "Flinging " .. count .. " target(s)"
+        StatusLabel.Text = "Multi Flinging " .. count .. " target(s)"
         StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
         
         task.spawn(function()
@@ -967,7 +969,7 @@ local success, err = pcall(function()
     refreshMenuTexts()
     updateStates()
     RefreshPlayerList()
-    print("[Script Sense] Успешно загружен с интегрированным Script Sense Fling меню!")
+    print("[Script Sense] Успешно загружен с интегрированным Script Sense Multi Fling меню!")
 end)
 
 if not success then
