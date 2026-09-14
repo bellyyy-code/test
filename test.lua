@@ -1,11 +1,11 @@
 --[========================================================================================[
     PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION
-    VERSION: 6.6.1 [BUGFIX]
-    DESCRIPTION: Fixed Auto Jump UI invisibility bug.
+    VERSION: 6.6.2 [BLACK AUTO JUMP UI FIX]
+    DESCRIPTION: Fixed Auto Jump UI invisibility bug and set row style to solid black.
 --]========================================================================================]
 
 local ScriptSense = {}
-ScriptSense.Version = "6.6.1"
+ScriptSense.Version = "6.6.2"
 ScriptSense.Active = true
 
 -- Services Retrieval
@@ -325,20 +325,20 @@ local function CreateControlInputRow(labelText, initialValue, callback)
     return rowFrame, textBox, label
 end
 
--- FIXED: Removed intro animation dependencies for dynamic rows so they render correctly
-local function CreateIndicatorRow(labelText, callback)
+-- CUSTOM BLACK ROW BUILDER FOR AUTO JUMP
+local function CreateBlackIndicatorRow(labelText, callback)
     local rowFrame = Instance.new("Frame")
-    rowFrame.Size = UDim2.new(1, 0, 0, 28)
-    rowFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-    rowFrame.BackgroundTransparency = 0.2
+    rowFrame.Size = UDim2.new(1, 0, 0, 32)
+    rowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- ПОЛНОСТЬЮ ЧЕРНЫЙ ФОН ПЛАШКИ
+    rowFrame.BackgroundTransparency = 0
     rowFrame.BorderSizePixel = 0
     rowFrame.Visible = false
     rowFrame.Parent = MainControlPanel
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(45, 45, 45)
+    stroke.Color = Color3.fromRGB(60, 60, 60) -- Серый контур плашки
     stroke.Thickness = 1
-    stroke.Transparency = 0
+    stroke.Transparency = 1
     stroke.Parent = rowFrame
 
     local btn = Instance.new("TextButton")
@@ -351,8 +351,8 @@ local function CreateIndicatorRow(labelText, callback)
     label.Size = UDim2.new(1, -30, 1, 0)
     label.Position = UDim2.new(0, 10, 0, 0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    label.TextTransparency = 0 -- Set to 0 so it's always visible when row is shown
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextTransparency = 1
     label.TextSize = 12
     label.Font = Enum.Font.GothamMedium
     label.Text = labelText
@@ -364,17 +364,18 @@ local function CreateIndicatorRow(labelText, callback)
     indicator.Position = UDim2.new(1, -22, 0.5, -6)
     indicator.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     indicator.BorderSizePixel = 0
-    indicator.BackgroundTransparency = 0 -- Set to 0 so the box isn't invisible
+    indicator.BackgroundTransparency = 0
     indicator.Parent = rowFrame
 
     local indStroke = Instance.new("UIStroke")
-    indStroke.Color = Color3.fromRGB(80, 80, 80)
+    indStroke.Color = Color3.fromRGB(100, 100, 100)
     indStroke.Thickness = 1
     indStroke.Transparency = 0
     indStroke.Parent = indicator
 
     btn.MouseButton1Click:Connect(callback)
 
+    table.insert(controlRowFrames, {Frame = rowFrame, Elements = {label}})
     return rowFrame, indicator
 end
 
@@ -427,7 +428,8 @@ local _, antiAimRowBtn = CreateControlRow("anti-aim (spin): off", function()
     UpdatePanelUI()
 end)
 
-local autoJumpRow, autoJumpInd = CreateIndicatorRow("auto jump", function()
+-- AUTO JUMP ROW (Черный фон)
+local autoJumpRow, autoJumpInd = CreateBlackIndicatorRow("auto jump", function()
     ScriptSense.Config.AutoJumpEnabled = not ScriptSense.Config.AutoJumpEnabled
     UpdatePanelUI()
 end)
@@ -464,10 +466,10 @@ UpdatePanelUI = function()
     skeletonRowBtn.Text = "skeleton esp: " .. (ScriptSense.Config.SkeletonEspEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Skeleton) .. "]"
     antiAimRowBtn.Text = "anti-aim (spin): " .. (ScriptSense.Config.AntiAimEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.AntiAim) .. "]"
     
-    -- Dynamic Auto Jump UI Logic
+    -- Auto Jump UI Status (Виден всегда)
     if autoJumpRow then 
-        autoJumpRow.Visible = ScriptSense.Config.AntiAimEnabled 
-        autoJumpInd.BackgroundColor3 = ScriptSense.Config.AutoJumpEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(0, 0, 0)
+        autoJumpRow.Visible = true 
+        autoJumpInd.BackgroundColor3 = ScriptSense.Config.AutoJumpEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(20, 20, 20)
     end
 
     spinSpeedBox.Text = tostring(ScriptSense.Config.SpinSpeed)
@@ -480,7 +482,7 @@ UpdatePanelUI()
 
 -- Intro Sequence
 task.spawn(function()
-    local fullText = "SCRIPT SENSE [v6.6.1]"
+    local fullText = "SCRIPT SENSE [v6.6.2]"
     local totalChars = #fullText
     local charDelay = 2.0 / totalChars
 
@@ -488,7 +490,7 @@ task.spawn(function()
         local scriptPart = string.sub("SCRIPT", 1, math.min(count, 6))
         local res = '<font color="#FFFFFF">' .. scriptPart .. '</font>'
         if count > 6 then res = res .. '<font color="#FF0000">' .. string.sub(" SENSE", 1, count - 6) .. '</font>' end
-        if count > 12 then res = res .. '<font color="#AAAAAA">' .. string.sub(" [v6.6.1]", 1, count - 12) .. '</font>' end
+        if count > 12 then res = res .. '<font color="#AAAAAA">' .. string.sub(" [v6.6.2]", 1, count - 12) .. '</font>' end
         return res
     end
 
@@ -496,7 +498,7 @@ task.spawn(function()
         WatermarkLabel.Text = getPartialText(i)
         task.wait(charDelay)
     end
-    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.6.1]</font>'
+    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.6.2]</font>'
 
     local currentAbsPos = WatermarkContainer.AbsolutePosition
     WatermarkContainer.AnchorPoint = Vector2.new(0, 0)
@@ -529,7 +531,13 @@ task.spawn(function()
         task.delay((delayIndex - 1) * 0.03, function()
             data.Frame.Visible = true
             local rowTween = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-            TweenService:Create(data.Frame, rowTween, { BackgroundTransparency = 0.2 }):Play()
+            
+            -- Черный фон для Auto Jump не размываем прозрачностью
+            if data.Frame ~= autoJumpRow then
+                TweenService:Create(data.Frame, rowTween, { BackgroundTransparency = 0.2 }):Play()
+            else
+                TweenService:Create(data.Frame, rowTween, { BackgroundTransparency = 0 }):Play()
+            end
             
             local stroke = data.Frame:FindFirstChildOfClass("UIStroke")
             if stroke then TweenService:Create(stroke, rowTween, { Transparency = 0 }):Play() end
@@ -672,24 +680,24 @@ end)
 
 -- 3. Anti-Aim (Spin) & Auto Jump Engine
 RunService.Heartbeat:Connect(function()
-    if ScriptSense.Config.AntiAimEnabled then
-        local character = LocalPlayer.Character
-        if character then
+    local character = LocalPlayer.Character
+    if character then
+        if ScriptSense.Config.AntiAimEnabled then
             local rootPart = character:FindFirstChild("HumanoidRootPart")
             if rootPart then
                 ScriptSense.Config.CurrentSpinAngle = (ScriptSense.Config.CurrentSpinAngle + ScriptSense.Config.SpinSpeed) % 360
                 rootPart.CFrame = CFrame.new(rootPart.Position) * CFrame.Angles(0, math.rad(ScriptSense.Config.CurrentSpinAngle), 0)
                 rootPart.RotVelocity = Vector3.new(0, 0, 0)
             end
-            
-            -- Auto Jump Logic
-            if ScriptSense.Config.AutoJumpEnabled then
-                local humanoid = character:FindFirstChildOfClass("Humanoid")
-                if humanoid then
-                    local state = humanoid:GetState()
-                    if state ~= Enum.HumanoidStateType.Freefall and state ~= Enum.HumanoidStateType.Jumping then
-                        humanoid.Jump = true
-                    end
+        end
+        
+        -- Auto Jump Logic (Независимо от Anti-Aim)
+        if ScriptSense.Config.AutoJumpEnabled then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                local state = humanoid:GetState()
+                if state ~= Enum.HumanoidStateType.Freefall and state ~= Enum.HumanoidStateType.Jumping then
+                    humanoid.Jump = true
                 end
             end
         end
