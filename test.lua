@@ -1,6 +1,6 @@
 --[========================================================================================[
     PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION
-    VERSION: 6.6.5 [FULL INTEGRATION WITH AUTO JUMP IN MAIN GUI]
+    VERSION: 6.6.5 [FIXED FLY BIND & INTEGRATED AUTO JUMP]
 --]========================================================================================]
 
 local ScriptSense = {}
@@ -45,7 +45,6 @@ ScriptSense.Config = {
     FlySpeed = 50,
     SpinSpeed = 25,
     SpeedhackSpeed = 50,
-    JumpInterval = 0.07,
     
     AimbotSmoothness = 4,
     AimbotFovRadius = 150,
@@ -122,7 +121,7 @@ WatermarkLabel.BackgroundTransparency = 1
 WatermarkLabel.TextSize = 28
 WatermarkLabel.Font = Enum.Font.GothamBold
 WatermarkLabel.RichText = true
-WatermarkLabel.Text = "<font color=\"#FF5050\">SCRIPT</font> SENSE"
+WatermarkLabel.Text = ""
 WatermarkLabel.TextXAlignment = Enum.TextXAlignment.Left
 WatermarkLabel.TextTransparency = 0
 WatermarkLabel.LayoutOrder = 1
@@ -233,19 +232,22 @@ local function CreateControlRow(initialText, callback)
     local rowFrame = Instance.new("Frame")
     rowFrame.Size = UDim2.new(1, 0, 0, 32)
     rowFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-    rowFrame.BackgroundTransparency = 0
+    rowFrame.BackgroundTransparency = 1
     rowFrame.BorderSizePixel = 0
+    rowFrame.Visible = false
     rowFrame.Parent = MainControlPanel
 
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(45, 45, 45)
     stroke.Thickness = 1
+    stroke.Transparency = 1
     stroke.Parent = rowFrame
 
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, 0, 1, 0)
     button.BackgroundTransparency = 1
     button.TextColor3 = Color3.fromRGB(230, 230, 230)
+    button.TextTransparency = 1
     button.TextSize = 12
     button.Font = Enum.Font.GothamMedium
     button.Text = initialText
@@ -268,18 +270,22 @@ local function CreateControlInputRow(labelText, initialValue, callback)
     local rowFrame = Instance.new("Frame")
     rowFrame.Size = UDim2.new(1, 0, 0, 32)
     rowFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    rowFrame.BackgroundTransparency = 1
     rowFrame.BorderSizePixel = 0
+    rowFrame.Visible = false
     rowFrame.Parent = MainControlPanel
 
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(45, 45, 45)
     stroke.Thickness = 1
+    stroke.Transparency = 1
     stroke.Parent = rowFrame
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(0.6, 0, 1, 0)
     label.BackgroundTransparency = 1
     label.TextColor3 = Color3.fromRGB(230, 230, 230)
+    label.TextTransparency = 1
     label.TextSize = 12
     label.Font = Enum.Font.GothamMedium
     label.Text = "   " .. labelText
@@ -290,7 +296,9 @@ local function CreateControlInputRow(labelText, initialValue, callback)
     textBox.Size = UDim2.new(0.4, -10, 1, -6)
     textBox.Position = UDim2.new(0.6, 0, 0, 3)
     textBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    textBox.BackgroundTransparency = 1
     textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.TextTransparency = 1
     textBox.TextSize = 12
     textBox.Font = Enum.Font.GothamBold
     textBox.Text = tostring(initialValue)
@@ -300,6 +308,7 @@ local function CreateControlInputRow(labelText, initialValue, callback)
     local boxStroke = Instance.new("UIStroke")
     boxStroke.Color = Color3.fromRGB(60, 60, 60)
     boxStroke.Thickness = 1
+    boxStroke.Transparency = 1
     boxStroke.Parent = textBox
 
     textBox.FocusLost:Connect(function()
@@ -309,6 +318,59 @@ local function CreateControlInputRow(labelText, initialValue, callback)
 
     table.insert(controlRowFrames, {Frame = rowFrame, Elements = {label, textBox}})
     return rowFrame, textBox, label
+end
+
+local function CreateBlackIndicatorRow(labelText, callback)
+    local rowFrame = Instance.new("Frame")
+    rowFrame.Size = UDim2.new(1, 0, 0, 32)
+    rowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    rowFrame.BackgroundTransparency = 0
+    rowFrame.BorderSizePixel = 0
+    rowFrame.Visible = false
+    rowFrame.Parent = MainControlPanel
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(60, 60, 60)
+    stroke.Thickness = 1
+    stroke.Transparency = 1
+    stroke.Parent = rowFrame
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = rowFrame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -30, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextTransparency = 1
+    label.TextSize = 12
+    label.Font = Enum.Font.GothamMedium
+    label.Text = labelText
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = rowFrame
+
+    local indicator = Instance.new("Frame")
+    indicator.Size = UDim2.new(0, 12, 0, 12)
+    indicator.Position = UDim2.new(1, -22, 0.5, -6)
+    indicator.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    indicator.BorderSizePixel = 0
+    indicator.BackgroundTransparency = 0
+    indicator.Parent = rowFrame
+
+    local indStroke = Instance.new("UIStroke")
+    indStroke.Color = Color3.fromRGB(100, 100, 100)
+    indStroke.Thickness = 1
+    indStroke.Transparency = 0
+    indStroke.Parent = indicator
+
+    btn.MouseButton1Click:Connect(callback)
+
+    table.insert(controlRowFrames, {Frame = rowFrame, Elements = {label}})
+    return rowFrame, indicator
 end
 
 -- Integrated Fling Window
@@ -413,16 +475,308 @@ local function BuildAndToggleFlingGUI()
     StopButton.TextSize = 18
     StopButton.Parent = MainFrame
 
+    local SelectAllButton = Instance.new("TextButton")
+    SelectAllButton.Position = UDim2.new(0, 10, 0, 330)
+    SelectAllButton.Size = UDim2.new(0.5, -15, 0, 30)
+    SelectAllButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    SelectAllButton.BorderSizePixel = 0
+    SelectAllButton.Text = "SELECT ALL"
+    SelectAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    SelectAllButton.Font = Enum.Font.SourceSans
+    SelectAllButton.TextSize = 14
+    SelectAllButton.Parent = MainFrame
+
+    local DeselectAllButton = Instance.new("TextButton")
+    DeselectAllButton.Position = UDim2.new(0.5, 5, 0, 330)
+    DeselectAllButton.Size = UDim2.new(0.5, -15, 0, 30)
+    DeselectAllButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    DeselectAllButton.BorderSizePixel = 0
+    DeselectAllButton.Text = "DESELECT ALL"
+    DeselectAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    DeselectAllButton.Font = Enum.Font.SourceSans
+    DeselectAllButton.TextSize = 14
+    DeselectAllButton.Parent = MainFrame
+
     local SelectedTargets = {}
     local PlayerCheckboxes = {}
     local FlingActive = false
+    getgenv().OldPos = nil
+    getgenv().FPDH = Workspace.FallenPartsDestroyHeight
 
+    local function CountSelectedTargets()
+        local count = 0
+        for _ in pairs(SelectedTargets) do count = count + 1 end
+        return count
+    end
+
+    local function UpdateStatus()
+        local count = CountSelectedTargets()
+        if FlingActive then
+            StatusLabel.Text = "Flinging " .. count .. " target(s)"
+            StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
+        else
+            StatusLabel.Text = count .. " target(s) selected" 
+            StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end
+    end
+
+    local function RefreshPlayerList()
+        for _, child in pairs(PlayerScrollFrame:GetChildren()) do child:Destroy() end
+        PlayerCheckboxes = {}
+        
+        local PlayerList = Players:GetPlayers()
+        table.sort(PlayerList, function(a, b) return a.Name:lower() < b.Name:lower() end)
+        
+        local yPosition = 5
+        for _, player in ipairs(PlayerList) do
+            if player ~= LocalPlayer then
+                local PlayerEntry = Instance.new("Frame")
+                PlayerEntry.Size = UDim2.new(1, -10, 0, 30)
+                PlayerEntry.Position = UDim2.new(0, 5, 0, yPosition)
+                PlayerEntry.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+                PlayerEntry.BorderSizePixel = 0
+                PlayerEntry.Parent = PlayerScrollFrame
+                
+                local Checkbox = Instance.new("TextButton")
+                Checkbox.Size = UDim2.new(0, 24, 0, 24)
+                Checkbox.Position = UDim2.new(0, 3, 0.5, -12)
+                Checkbox.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+                Checkbox.BorderSizePixel = 0
+                Checkbox.Text = ""
+                Checkbox.Parent = PlayerEntry
+                
+                local Checkmark = Instance.new("TextLabel")
+                Checkmark.Size = UDim2.new(1, 0, 1, 0)
+                Checkmark.BackgroundTransparency = 1
+                Checkmark.Text = "✓"
+                Checkmark.TextColor3 = Color3.fromRGB(0, 255, 0)
+                Checkmark.TextSize = 18
+                Checkmark.Font = Enum.Font.SourceSansBold
+                Checkmark.Visible = SelectedTargets[player.Name] ~= nil
+                Checkmark.Parent = Checkbox
+                
+                local NameLabel = Instance.new("TextLabel")
+                NameLabel.Size = UDim2.new(1, -35, 1, 0)
+                NameLabel.Position = UDim2.new(0, 30, 0, 0)
+                NameLabel.BackgroundTransparency = 1
+                NameLabel.Text = player.Name
+                NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                NameLabel.TextSize = 16
+                NameLabel.Font = Enum.Font.SourceSans
+                NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+                NameLabel.Parent = PlayerEntry
+                
+                local ClickArea = Instance.new("TextButton")
+                ClickArea.Size = UDim2.new(1, 0, 1, 0)
+                ClickArea.BackgroundTransparency = 1
+                ClickArea.Text = ""
+                ClickArea.ZIndex = 2
+                ClickArea.Parent = PlayerEntry
+                
+                ClickArea.MouseButton1Click:Connect(function()
+                    if SelectedTargets[player.Name] then
+                        SelectedTargets[player.Name] = nil
+                        Checkmark.Visible = false
+                    else
+                        SelectedTargets[player.Name] = player
+                        Checkmark.Visible = true
+                    end
+                    UpdateStatus()
+                end)
+                
+                PlayerCheckboxes[player.Name] = { Entry = PlayerEntry, Checkmark = Checkmark }
+                yPosition = yPosition + 35
+            end
+        end
+        PlayerScrollFrame.CanvasSize = UDim2.new(0, 0, 0, yPosition + 5)
+    end
+
+    local function ToggleAllPlayers(select)
+        for _, player in ipairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer then
+                local checkboxData = PlayerCheckboxes[player.Name]
+                if checkboxData then
+                    if select then
+                        SelectedTargets[player.Name] = player
+                        checkboxData.Checkmark.Visible = true
+                    else
+                        SelectedTargets[player.Name] = nil
+                        checkboxData.Checkmark.Visible = false
+                    end
+                end
+            end
+        end
+        UpdateStatus()
+    end
+
+    local function Message(titleMsg, textMsg, timeVal)
+        pcall(function()
+            StarterGui:SetCore("SendNotification", { Title = titleMsg, Text = textMsg, Duration = timeVal or 5 })
+        end)
+    end
+
+    local function SkidFling(TargetPlayer)
+        local Character = LocalPlayer.Character
+        local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+        local RootPart = Humanoid and Humanoid.RootPart
+        local TCharacter = TargetPlayer.Character
+        if not TCharacter then return end
+        
+        local THumanoid = TCharacter:FindFirstChildOfClass("Humanoid")
+        local TRootPart = THumanoid and THumanoid.RootPart
+        local THead = TCharacter:FindFirstChild("Head")
+        local Accessory = TCharacter:FindFirstChildOfClass("Accessory")
+        local Handle = Accessory and Accessory:FindFirstChild("Handle")
+
+        if Character and Humanoid and RootPart then
+            if RootPart.Velocity.Magnitude < 50 then getgenv().OldPos = RootPart.CFrame end
+            if THumanoid and THumanoid.Sit then return Message("Error", TargetPlayer.Name .. " is sitting", 2) end
+            
+            if THead then Workspace.CurrentCamera.CameraSubject = THead
+            elseif Handle then Workspace.CurrentCamera.CameraSubject = Handle
+            elseif THumanoid and TRootPart then Workspace.CurrentCamera.CameraSubject = THumanoid end
+            
+            if not TCharacter:FindFirstChildWhichIsA("BasePart") then return end
+            
+            local FPos = function(BasePart, Pos, Ang)
+                RootPart.CFrame = CFrame.new(BasePart.Position) * Pos * Ang
+                Character:SetPrimaryPartCFrame(CFrame.new(BasePart.Position) * Pos * Ang)
+                RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+                RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+            end
+            
+            local SFBasePart = function(BasePart)
+                local TimeToWait = 2
+                local Time = tick()
+                local Angle = 0
+                repeat
+                    if RootPart and THumanoid then
+                        if BasePart.Velocity.Magnitude < 50 then
+                            Angle = Angle + 100
+                            FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle),0 ,0))
+                            task.wait()
+                            FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+                            task.wait()
+                        else
+                            FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
+                            task.wait()
+                            FPos(BasePart, CFrame.new(0, -1.5, -THumanoid.WalkSpeed), CFrame.Angles(0, 0, 0))
+                            task.wait()
+                        end
+                    end
+                until Time + TimeToWait < tick() or not FlingActive
+            end
+            
+            Workspace.FallenPartsDestroyHeight = 0/0
+            
+            local BV = Instance.new("BodyVelocity")
+            BV.Parent = RootPart
+            BV.Velocity = Vector3.new(0, 0, 0)
+            BV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            
+            Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+            
+            if TRootPart then SFBasePart(TRootPart)
+            elseif THead then SFBasePart(THead)
+            elseif Handle then SFBasePart(Handle)
+            else return Message("Error", TargetPlayer.Name .. " has no valid parts", 2) end
+            
+            BV:Destroy()
+            Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+            Workspace.CurrentCamera.CameraSubject = Humanoid
+            
+            if getgenv().OldPos then
+                repeat
+                    RootPart.CFrame = getgenv().OldPos * CFrame.new(0, .5, 0)
+                    Character:SetPrimaryPartCFrame(getgenv().OldPos * CFrame.new(0, .5, 0))
+                    Humanoid:ChangeState("GettingUp")
+                    for _, part in pairs(Character:GetChildren()) do
+                        if part:IsA("BasePart") then part.Velocity, part.RotVelocity = Vector3.new(), Vector3.new() end
+                    end
+                    task.wait()
+                until (RootPart.Position - getgenv().OldPos.p).Magnitude < 25
+                Workspace.FallenPartsDestroyHeight = getgenv().FPDH
+            end
+        else
+            return Message("Error", "Your character is not ready", 2)
+        end
+    end
+
+    local function StartFling()
+        if FlingActive then return end
+        local count = CountSelectedTargets()
+        if count == 0 then
+            StatusLabel.Text = "No targets selected!"
+            task.wait(1)
+            StatusLabel.Text = "Select targets to fling"
+            return
+        end
+        
+        FlingActive = true
+        UpdateStatus()
+        Message("Started", "Flinging " .. count .. " targets", 2)
+        
+        task.spawn(function()
+            while FlingActive do
+                local validTargets = {}
+                for name, player in pairs(SelectedTargets) do
+                    if player and player.Parent then
+                        validTargets[name] = player
+                    else
+                        SelectedTargets[name] = nil
+                        local checkbox = PlayerCheckboxes[name]
+                        if checkbox then checkbox.Checkmark.Visible = false end
+                    end
+                end
+                
+                for _, player in pairs(validTargets) do
+                    if FlingActive then
+                        SkidFling(player)
+                        task.wait(0.1)
+                    else break end
+                end
+                UpdateStatus()
+                task.wait(0.5)
+            end
+        end)
+    end
+
+    local function StopFling()
+        if not FlingActive then return end
+        FlingActive = false
+        UpdateStatus()
+        Message("Stopped", "Fling has been stopped", 2)
+    end
+
+    StartButton.MouseButton1Click:Connect(StartFling)
+    StopButton.MouseButton1Click:Connect(StopFling)
+    SelectAllButton.MouseButton1Click:Connect(function() ToggleAllPlayers(true) end)
+    DeselectAllButton.MouseButton1Click:Connect(function() ToggleAllPlayers(false) end)
     CloseButton.MouseButton1Click:Connect(function()
+        StopFling()
         MainFrame.Visible = false
     end)
+
+    Players.PlayerAdded:Connect(RefreshPlayerList)
+    Players.PlayerRemoving:Connect(function(player)
+        if SelectedTargets[player.Name] then SelectedTargets[player.Name] = nil end
+        RefreshPlayerList()
+        UpdateStatus()
+    end)
+
+    RefreshPlayerList()
+    UpdateStatus()
 end
 
--- Auto Jump Engine
+local activeRebindKey = nil
+local function GetKeyName(keyCode)
+    if keyCode.Name == "Backquote" then return "`" end
+    return string.lower(keyCode.Name)
+end
+local startFlingThread
+local PopulateKeybindsDisplay
+
+-- Fixed Auto Jump Engine (Loop with interval)
 local autoJumpRunning = false
 local function ToggleAutoJumpThread()
     if ScriptSense.Config.AutoJumpEnabled then
@@ -437,7 +791,7 @@ local function ToggleAutoJumpThread()
                             humanoid.Jump = true
                         end
                     end
-                    task.wait(ScriptSense.Config.JumpInterval)
+                    task.wait(0.07)
                 end
                 autoJumpRunning = false
             end)
@@ -486,8 +840,7 @@ local _, antiAimRowBtn = CreateControlRow("anti-aim (spin): off", function()
     UpdatePanelUI()
 end)
 
--- INTEGRATED AUTO JUMP BUTTON
-local _, autoJumpRowBtn = CreateControlRow("autojump: off", function()
+local _, autoJumpRowBtn = CreateControlRow("auto-jump: off", function()
     ScriptSense.Config.AutoJumpEnabled = not ScriptSense.Config.AutoJumpEnabled
     ToggleAutoJumpThread()
     UpdatePanelUI()
@@ -511,7 +864,7 @@ local _, keybindsMenuBtn = CreateControlRow("keybind manager", function()
     KeybindsMenuWindow.Visible = not KeybindsMenuWindow.Visible
 end)
 
--- Dynamic Update function for text on UI
+-- UI Sync Function
 UpdatePanelUI = function()
     wallhackRowBtn.Text = "wallhack: " .. (ScriptSense.Config.WallhackEnabled and "on" or "off")
     aimbotRowBtn.Text = "aimbot: " .. (ScriptSense.Config.AimbotEnabled and "on" or "off")
@@ -519,12 +872,12 @@ UpdatePanelUI = function()
     flyRowBtn.Text = "fly: " .. (ScriptSense.Config.FlyEnabled and "on" or "off")
     skeletonRowBtn.Text = "skeleton esp: " .. (ScriptSense.Config.SkeletonEspEnabled and "on" or "off")
     antiAimRowBtn.Text = "anti-aim (spin): " .. (ScriptSense.Config.AntiAimEnabled and "on" or "off")
-    autoJumpRowBtn.Text = "autojump: " .. (ScriptSense.Config.AutoJumpEnabled and "on" or "off")
+    autoJumpRowBtn.Text = "auto-jump: " .. (ScriptSense.Config.AutoJumpEnabled and "on" or "off")
     speedhackRowBtn.Text = "speedhack: " .. (ScriptSense.Config.SpeedhackEnabled and "on" or "off")
     touchFlingRowBtn.Text = "touch fling: " .. (ScriptSense.Config.TouchFlingEnabled and "on" or "off")
 end
 
--- Keybinds handling
+-- Keybinds connection
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed or IsTyping() then return end
     
@@ -538,10 +891,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         UpdatePanelUI()
     elseif input.KeyCode == ScriptSense.Config.Keybinds.Fly then
         ScriptSense.Config.FlyEnabled = not ScriptSense.Config.FlyEnabled
-        UpdatePanelUI()
-    elseif input.KeyCode == ScriptSense.Config.Keybinds.AutoJump then
-        ScriptSense.Config.AutoJumpEnabled = not ScriptSense.Config.AutoJumpEnabled
-        ToggleAutoJumpThread()
         UpdatePanelUI()
     end
 end)
