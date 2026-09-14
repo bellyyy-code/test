@@ -1,11 +1,11 @@
 --[========================================================================================[
     PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION
-    VERSION: 6.6.0 [PRODUCTION GRADE]
-    DESCRIPTION: Fixed Speedhack, added Aimbot FOV Circle, Max Dist, and Auto Jump UI.
+    VERSION: 6.6.1 [BUGFIX]
+    DESCRIPTION: Fixed Auto Jump UI invisibility bug.
 --]========================================================================================]
 
 local ScriptSense = {}
-ScriptSense.Version = "6.6.0"
+ScriptSense.Version = "6.6.1"
 ScriptSense.Active = true
 
 -- Services Retrieval
@@ -54,7 +54,7 @@ ScriptSense.Config = {
     
     AimbotSmoothness = 4,
     AimbotFovRadius = 150,
-    AimbotMaxDistance = 1000, -- Maximum 3D distance for aimbot to lock on
+    AimbotMaxDistance = 1000, 
     CurrentSpinAngle = 0,
 
     Keybinds = {
@@ -151,7 +151,7 @@ ArrowStroke.Thickness = 1
 ArrowStroke.Transparency = 1
 ArrowStroke.Parent = MenuToggleArrow
 
--- Main Control Panel Frame (Converted to ScrollingFrame for dynamic content)
+-- Main Control Panel Frame
 local MainControlPanel = Instance.new("ScrollingFrame")
 MainControlPanel.Name = "MainControlPanel"
 MainControlPanel.Size = UDim2.new(0, 260, 0, 520)
@@ -267,7 +267,7 @@ local function CreateControlRow(initialText, callback)
         button.MouseButton1Click:Connect(callback)
     end
 
-    table.insert(controlRowFrames, {Frame = rowFrame, Elements = {button}, IsDynamic = false})
+    table.insert(controlRowFrames, {Frame = rowFrame, Elements = {button}})
     return rowFrame, button
 end
 
@@ -321,15 +321,16 @@ local function CreateControlInputRow(labelText, initialValue, callback)
         if num then callback(num) else textBox.Text = tostring(initialValue) end
     end)
 
-    table.insert(controlRowFrames, {Frame = rowFrame, Elements = {label, textBox}, IsDynamic = false})
+    table.insert(controlRowFrames, {Frame = rowFrame, Elements = {label, textBox}})
     return rowFrame, textBox, label
 end
 
+-- FIXED: Removed intro animation dependencies for dynamic rows so they render correctly
 local function CreateIndicatorRow(labelText, callback)
     local rowFrame = Instance.new("Frame")
     rowFrame.Size = UDim2.new(1, 0, 0, 28)
     rowFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-    rowFrame.BackgroundTransparency = 1
+    rowFrame.BackgroundTransparency = 0.2
     rowFrame.BorderSizePixel = 0
     rowFrame.Visible = false
     rowFrame.Parent = MainControlPanel
@@ -337,7 +338,7 @@ local function CreateIndicatorRow(labelText, callback)
     local stroke = Instance.new("UIStroke")
     stroke.Color = Color3.fromRGB(45, 45, 45)
     stroke.Thickness = 1
-    stroke.Transparency = 1
+    stroke.Transparency = 0
     stroke.Parent = rowFrame
 
     local btn = Instance.new("TextButton")
@@ -351,7 +352,7 @@ local function CreateIndicatorRow(labelText, callback)
     label.Position = UDim2.new(0, 10, 0, 0)
     label.BackgroundTransparency = 1
     label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    label.TextTransparency = 1
+    label.TextTransparency = 0 -- Set to 0 so it's always visible when row is shown
     label.TextSize = 12
     label.Font = Enum.Font.GothamMedium
     label.Text = labelText
@@ -363,18 +364,17 @@ local function CreateIndicatorRow(labelText, callback)
     indicator.Position = UDim2.new(1, -22, 0.5, -6)
     indicator.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     indicator.BorderSizePixel = 0
-    indicator.BackgroundTransparency = 1
+    indicator.BackgroundTransparency = 0 -- Set to 0 so the box isn't invisible
     indicator.Parent = rowFrame
 
     local indStroke = Instance.new("UIStroke")
     indStroke.Color = Color3.fromRGB(80, 80, 80)
     indStroke.Thickness = 1
-    indStroke.Transparency = 1
+    indStroke.Transparency = 0
     indStroke.Parent = indicator
 
     btn.MouseButton1Click:Connect(callback)
 
-    table.insert(controlRowFrames, {Frame = rowFrame, Elements = {label, indicator}, IsDynamic = true})
     return rowFrame, indicator
 end
 
@@ -480,7 +480,7 @@ UpdatePanelUI()
 
 -- Intro Sequence
 task.spawn(function()
-    local fullText = "SCRIPT SENSE [v6.6.0]"
+    local fullText = "SCRIPT SENSE [v6.6.1]"
     local totalChars = #fullText
     local charDelay = 2.0 / totalChars
 
@@ -488,7 +488,7 @@ task.spawn(function()
         local scriptPart = string.sub("SCRIPT", 1, math.min(count, 6))
         local res = '<font color="#FFFFFF">' .. scriptPart .. '</font>'
         if count > 6 then res = res .. '<font color="#FF0000">' .. string.sub(" SENSE", 1, count - 6) .. '</font>' end
-        if count > 12 then res = res .. '<font color="#AAAAAA">' .. string.sub(" [v6.6.0]", 1, count - 12) .. '</font>' end
+        if count > 12 then res = res .. '<font color="#AAAAAA">' .. string.sub(" [v6.6.1]", 1, count - 12) .. '</font>' end
         return res
     end
 
@@ -496,7 +496,7 @@ task.spawn(function()
         WatermarkLabel.Text = getPartialText(i)
         task.wait(charDelay)
     end
-    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.6.0]</font>'
+    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.6.1]</font>'
 
     local currentAbsPos = WatermarkContainer.AbsolutePosition
     WatermarkContainer.AnchorPoint = Vector2.new(0, 0)
@@ -525,32 +525,26 @@ task.spawn(function()
 
     local delayIndex = 0
     for _, data in ipairs(controlRowFrames) do
-        if not data.IsDynamic or (data.IsDynamic and ScriptSense.Config.AntiAimEnabled) then
-            delayIndex = delayIndex + 1
-            task.delay((delayIndex - 1) * 0.03, function()
-                data.Frame.Visible = true
-                local rowTween = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-                TweenService:Create(data.Frame, rowTween, { BackgroundTransparency = 0.2 }):Play()
-                
-                local stroke = data.Frame:FindFirstChildOfClass("UIStroke")
-                if stroke then TweenService:Create(stroke, rowTween, { Transparency = 0 }):Play() end
+        delayIndex = delayIndex + 1
+        task.delay((delayIndex - 1) * 0.03, function()
+            data.Frame.Visible = true
+            local rowTween = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            TweenService:Create(data.Frame, rowTween, { BackgroundTransparency = 0.2 }):Play()
+            
+            local stroke = data.Frame:FindFirstChildOfClass("UIStroke")
+            if stroke then TweenService:Create(stroke, rowTween, { Transparency = 0 }):Play() end
 
-                for _, child in ipairs(data.Elements) do
-                    if child:IsA("TextButton") or child:IsA("TextLabel") or child:IsA("TextBox") then
-                        TweenService:Create(child, rowTween, { TextTransparency = 0 }):Play()
-                        if child:IsA("TextBox") then
-                            TweenService:Create(child, rowTween, { BackgroundTransparency = 0.5 }):Play()
-                            local bStroke = child:FindFirstChildOfClass("UIStroke")
-                            if bStroke then TweenService:Create(bStroke, rowTween, { Transparency = 0 }):Play() end
-                        end
-                    elseif child:IsA("Frame") then -- Indicator
-                        TweenService:Create(child, rowTween, { BackgroundTransparency = 0 }):Play()
+            for _, child in ipairs(data.Elements) do
+                if child:IsA("TextButton") or child:IsA("TextLabel") or child:IsA("TextBox") then
+                    TweenService:Create(child, rowTween, { TextTransparency = 0 }):Play()
+                    if child:IsA("TextBox") then
+                        TweenService:Create(child, rowTween, { BackgroundTransparency = 0.5 }):Play()
                         local bStroke = child:FindFirstChildOfClass("UIStroke")
                         if bStroke then TweenService:Create(bStroke, rowTween, { Transparency = 0 }):Play() end
                     end
                 end
-            end)
-        end
+            end
+        end)
     end
 end)
 
@@ -656,7 +650,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 2. Speedhack Engine (FIXED: Continuous Loop for Bulletproof Operation)
+-- 2. Speedhack Engine
 local lastSpeedhackState = false
 RunService.RenderStepped:Connect(function()
     local character = LocalPlayer.Character
@@ -709,7 +703,7 @@ if Drawing and Drawing.new then
     FovCircle.Color = Color3.fromRGB(255, 255, 255)
     FovCircle.Thickness = 1.2
     FovCircle.Filled = false
-    FovCircle.NumSides = 128 -- Perfect circle
+    FovCircle.NumSides = 128
     FovCircle.Visible = false
 end
 
@@ -757,7 +751,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 5. TouchFling, Fly, ESP, and Godmode omitted from snippet size but standard loop implementations continue below
 -- Godmode Engine
 RunService.Stepped:Connect(function()
     if ScriptSense.Config.GodmodeEnabled then
