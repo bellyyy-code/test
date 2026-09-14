@@ -1,11 +1,11 @@
 --[========================================================================================[
     PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION (FIXED CLEANUP)
-    VERSION: 6.4.6 [PRODUCTION GRADE]
+    VERSION: 6.4.7 [PRODUCTION GRADE]
     DESCRIPTION: Typewriter appearance with 2 seconds total duration for the entire text.
 --]========================================================================================]
 
 local ScriptSense = {}
-ScriptSense.Version = "6.4.6"
+ScriptSense.Version = "6.4.7"
 ScriptSense.Active = true
 
 -- Services Retrieval
@@ -476,7 +476,7 @@ PopulateKeybindsDisplay = function()
         {"Aimbot", "Aimbot", ScriptSense.Config.Keybinds.Aimbot},
         {"Godmode", "Godmode", ScriptSense.Config.Keybinds.Godmode},
         {"Fly", "Fly", ScriptSense.Config.Keybinds.Fly},
-        {"Skeleton+Box", "Skeleton", ScriptSense.Config.Keybinds.Skeleton},
+        {"Skeleton esp", "Skeletonesp", ScriptSense.Config.Keybinds.Skeletonesp},
         {"Anti-Aim", "AntiAim", ScriptSense.Config.Keybinds.AntiAim},
         {"TouchFling", "TouchFling", ScriptSense.Config.Keybinds.TouchFling},
         {"Menu Toggle", "MenuToggle", ScriptSense.Config.Keybinds.MenuToggle},
