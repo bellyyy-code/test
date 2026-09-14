@@ -1,11 +1,11 @@
 --[========================================================================================[
-    PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION (FIXED CLEANUP)
-    VERSION: 6.4.7 [PRODUCTION GRADE]
-    DESCRIPTION: Typewriter appearance with 2 seconds total duration for the entire text.
+    PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION (FIXED & ENHANCED)
+    VERSION: 6.5.0 [PRODUCTION GRADE]
+    DESCRIPTION: Added adjustable Spin Speed, Speedhack, and Speedhack Speed control.
 --]========================================================================================]
 
 local ScriptSense = {}
-ScriptSense.Version = "6.4.7"
+ScriptSense.Version = "6.5.0"
 ScriptSense.Active = true
 
 -- Services Retrieval
@@ -52,10 +52,12 @@ ScriptSense.Config = {
     FlyEnabled = false,
     SkeletonEspEnabled = false,
     AntiAimEnabled = false,
+    SpeedhackEnabled = false,
     TouchFlingEnabled = false,
 
     FlySpeed = 50,
     SpinSpeed = 25,
+    SpeedhackSpeed = 32,
     AimbotSmoothness = 4,
     AimbotFovRadius = 150,
     CurrentSpinAngle = 0,
@@ -67,6 +69,7 @@ ScriptSense.Config = {
         Fly = Enum.KeyCode.F,
         Skeleton = Enum.KeyCode.X,
         AntiAim = Enum.KeyCode.U,
+        Speedhack = Enum.KeyCode.V,
         TouchFling = Enum.KeyCode.K,
         MenuToggle = Enum.KeyCode.Backquote,
     }
@@ -110,7 +113,7 @@ ScreenGui.Parent = RootGuiParent
 
 local IsMobileDevice = UserInputService.TouchEnabled
 
--- Watermark Container (Starts strictly centered on screen using AnchorPoint 0.5, 0.5)
+-- Watermark Container
 local WatermarkContainer = Instance.new("Frame")
 WatermarkContainer.Name = "WatermarkContainer"
 WatermarkContainer.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -141,7 +144,7 @@ WatermarkLabel.TextTransparency = 0
 WatermarkLabel.LayoutOrder = 1
 WatermarkLabel.Parent = WatermarkContainer
 
--- Menu Toggle Arrow Button (Hidden initially until loading completes)
+-- Menu Toggle Arrow Button
 local MenuToggleArrow = Instance.new("TextButton")
 MenuToggleArrow.Name = "MenuToggleArrow"
 MenuToggleArrow.Size = UDim2.new(0, 26, 0, 26)
@@ -164,7 +167,7 @@ ArrowStroke.Parent = MenuToggleArrow
 -- Main Control Panel Frame
 local MainControlPanel = Instance.new("Frame")
 MainControlPanel.Name = "MainControlPanel"
-MainControlPanel.Size = UDim2.new(0, 240, 0, 460)
+MainControlPanel.Size = UDim2.new(0, 250, 0, 560)
 MainControlPanel.Position = UDim2.new(0, 20, 0, 65)
 MainControlPanel.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 MainControlPanel.BorderSizePixel = 0
@@ -189,8 +192,8 @@ MenuToggleArrow.MouseButton1Click:Connect(ToggleMenuVisibility)
 -- Dedicated Interactive Keybinds Menu Window
 local KeybindsMenuWindow = Instance.new("Frame")
 KeybindsMenuWindow.Name = "KeybindsMenuWindow"
-KeybindsMenuWindow.Size = UDim2.new(0, 300, 0, 390)
-KeybindsMenuWindow.Position = UDim2.new(0.5, -150, 0.5, -195)
+KeybindsMenuWindow.Size = UDim2.new(0, 300, 0, 420)
+KeybindsMenuWindow.Position = UDim2.new(0.5, -150, 0.5, -210)
 KeybindsMenuWindow.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 KeybindsMenuWindow.BorderSizePixel = 0
 KeybindsMenuWindow.Visible = false
@@ -208,7 +211,7 @@ KbTitle.BackgroundTransparency = 1
 KbTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 KbTitle.TextSize = 14
 KbTitle.Font = Enum.Font.GothamBold
-KbTitle.Text = "  KEYBIND MANAGER (Click to rebind)"
+KbTitle.Text = "   KEYBIND MANAGER (Click to rebind)"
 KbTitle.TextXAlignment = Enum.TextXAlignment.Left
 KbTitle.Parent = KeybindsMenuWindow
 
@@ -235,12 +238,11 @@ local function ToggleKeybindsMenu()
     end
 end
 
-local UIComponentRegistry = {}
 local controlRowFrames = {}
 
 local function CreateControlRow(parent, posY, initialText, callback)
     local rowFrame = Instance.new("Frame")
-    rowFrame.Size = UDim2.new(1, -20, 0, 35)
+    rowFrame.Size = UDim2.new(1, -20, 0, 32)
     rowFrame.Position = UDim2.new(0, 10, 0, posY)
     rowFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
     rowFrame.BackgroundTransparency = 1
@@ -259,14 +261,14 @@ local function CreateControlRow(parent, posY, initialText, callback)
     button.BackgroundTransparency = 1
     button.TextColor3 = Color3.fromRGB(230, 230, 230)
     button.TextTransparency = 1
-    button.TextSize = 13
+    button.TextSize = 12
     button.Font = Enum.Font.GothamMedium
     button.Text = initialText
     button.TextXAlignment = Enum.TextXAlignment.Left
     button.Parent = rowFrame
 
     local padding = Instance.new("UIPadding")
-    padding.PaddingLeft = UDim.new(0, 12)
+    padding.PaddingLeft = UDim.new(0, 10)
     padding.Parent = button
 
     if callback then
@@ -291,61 +293,87 @@ local function GetKeyName(keyCode)
     return string.lower(name)
 end
 
+-- Forward declarations for dynamic UI update
+local UpdatePanelUI
+
 -- Populate Main Control Panel Rows
-local verticalOffset = 15
+local verticalOffset = 12
 
-local _, wallhackRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "wallhack: off | bind: g", function()
+local _, wallhackRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "wallhack: off", function()
     ScriptSense.Config.WallhackEnabled = not ScriptSense.Config.WallhackEnabled
+    UpdatePanelUI()
 end)
-UIComponentRegistry["wallhack"] = wallhackRowBtn
-verticalOffset = verticalOffset + 42
+verticalOffset = verticalOffset + 38
 
-local _, aimbotRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "aimbot: off | bind: r", function()
+local _, aimbotRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "aimbot: off", function()
     if not IsRobloxMenuOpen() then
         ScriptSense.Config.AimbotEnabled = not ScriptSense.Config.AimbotEnabled
+        UpdatePanelUI()
     end
 end)
-UIComponentRegistry["aimbot"] = aimbotRowBtn
-verticalOffset = verticalOffset + 42
+verticalOffset = verticalOffset + 38
 
-local _, godmodeRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "godmode: off | bind: c", function()
+local _, godmodeRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "godmode: off", function()
     ScriptSense.Config.GodmodeEnabled = not ScriptSense.Config.GodmodeEnabled
+    UpdatePanelUI()
 end)
-UIComponentRegistry["godmode"] = godmodeRowBtn
-verticalOffset = verticalOffset + 42
+verticalOffset = verticalOffset + 38
 
-local _, flyRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "fly: off | bind: f", function()
+local _, flyRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "fly: off", function()
     ScriptSense.Config.FlyEnabled = not ScriptSense.Config.FlyEnabled
+    UpdatePanelUI()
 end)
-UIComponentRegistry["fly"] = flyRowBtn
-verticalOffset = verticalOffset + 42
+verticalOffset = verticalOffset + 38
 
-local _, skeletonRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "skeleton esp: off | bind: x", function()
+local _, skeletonRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "skeleton esp: off", function()
     ScriptSense.Config.SkeletonEspEnabled = not ScriptSense.Config.SkeletonEspEnabled
+    UpdatePanelUI()
 end)
-UIComponentRegistry["skeleton"] = skeletonRowBtn
-verticalOffset = verticalOffset + 42
+verticalOffset = verticalOffset + 38
 
-local _, antiAimRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "anti-aim: off | bind: u", function()
+local _, antiAimRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "anti-aim (spin): off", function()
     ScriptSense.Config.AntiAimEnabled = not ScriptSense.Config.AntiAimEnabled
+    UpdatePanelUI()
 end)
-UIComponentRegistry["anti-aim"] = antiAimRowBtn
-verticalOffset = verticalOffset + 42
+verticalOffset = verticalOffset + 38
 
-local _, touchFlingRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "touchfling: off | bind: k", function()
+local spinSpeeds = {10, 25, 50, 100, 200, 400}
+local spinSpeedIndex = 2
+local _, spinSpeedRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "spin speed: 25", function()
+    spinSpeedIndex = (spinSpeedIndex % #spinSpeeds) + 1
+    ScriptSense.Config.SpinSpeed = spinSpeeds[spinSpeedIndex]
+    UpdatePanelUI()
+end)
+verticalOffset = verticalOffset + 38
+
+local _, speedhackRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "speedhack: off", function()
+    ScriptSense.Config.SpeedhackEnabled = not ScriptSense.Config.SpeedhackEnabled
+    UpdatePanelUI()
+end)
+verticalOffset = verticalOffset + 38
+
+local speedhackSpeeds = {16, 24, 32, 50, 80, 120, 200}
+local speedhackSpeedIndex = 3
+local _, speedhackSpeedRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "speedhack speed: 32", function()
+    speedhackSpeedIndex = (speedhackSpeedIndex % #speedhackSpeeds) + 1
+    ScriptSense.Config.SpeedhackSpeed = speedhackSpeeds[speedhackSpeedIndex]
+    UpdatePanelUI()
+end)
+verticalOffset = verticalOffset + 38
+
+local _, touchFlingRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "touchfling: off", function()
     ScriptSense.Config.TouchFlingEnabled = not ScriptSense.Config.TouchFlingEnabled
     if ScriptSense.Config.TouchFlingEnabled then
         startFlingThread()
     end
+    UpdatePanelUI()
 end)
-UIComponentRegistry["touchfling"] = touchFlingRowBtn
-verticalOffset = verticalOffset + 42
+verticalOffset = verticalOffset + 38
 
-local _, menuToggleRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "keybinds menu | bind: `", function()
+CreateControlRow(MainControlPanel, verticalOffset, "keybinds manager", function()
     ToggleKeybindsMenu()
 end)
-UIComponentRegistry["menutoggle"] = menuToggleRowBtn
-verticalOffset = verticalOffset + 42
+verticalOffset = verticalOffset + 38
 
 -- Teleport Window
 local TeleportWindow = Instance.new("ScrollingFrame")
@@ -371,11 +399,26 @@ CreateControlRow(MainControlPanel, verticalOffset, "teleport menu", function()
     TeleportWindow.Visible = not TeleportWindow.Visible
 end)
 
--- Intro Sequence: Total appearance duration of 2 seconds for the whole text
+UpdatePanelUI = function()
+    if wallhackRowBtn then wallhackRowBtn.Text = "wallhack: " .. (ScriptSense.Config.WallhackEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Wallhack) .. "]" end
+    if aimbotRowBtn then aimbotRowBtn.Text = "aimbot: " .. (ScriptSense.Config.AimbotEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Aimbot) .. "]" end
+    if godmodeRowBtn then godmodeRowBtn.Text = "godmode: " .. (ScriptSense.Config.GodmodeEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Godmode) .. "]" end
+    if flyRowBtn then flyRowBtn.Text = "fly: " .. (ScriptSense.Config.FlyEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Fly) .. "]" end
+    if skeletonRowBtn then skeletonRowBtn.Text = "skeleton esp: " .. (ScriptSense.Config.SkeletonEspEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Skeleton) .. "]" end
+    if antiAimRowBtn then antiAimRowBtn.Text = "anti-aim (spin): " .. (ScriptSense.Config.AntiAimEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.AntiAim) .. "]" end
+    if spinSpeedRowBtn then spinSpeedRowBtn.Text = "spin speed: " .. ScriptSense.Config.SpinSpeed .. " (click to cycle)" end
+    if speedhackRowBtn then speedhackRowBtn.Text = "speedhack: " .. (ScriptSense.Config.SpeedhackEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Speedhack) .. "]" end
+    if speedhackSpeedRowBtn then speedhackSpeedRowBtn.Text = "speedhack speed: " .. ScriptSense.Config.SpeedhackSpeed .. " (click to cycle)" end
+    if touchFlingRowBtn then touchFlingRowBtn.Text = "touchfling: " .. (ScriptSense.Config.TouchFlingEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.TouchFling) .. "]" end
+end
+
+UpdatePanelUI()
+
+-- Intro Sequence
 task.spawn(function()
-    local fullText = "SCRIPT SENSE [v6.3.3]"
+    local fullText = "SCRIPT SENSE [v6.5.0]"
     local totalChars = #fullText
-    local totalDuration = 2.0 -- Общее время появления текста ровно 2 секунды
+    local totalDuration = 2.0
     local charDelay = totalDuration / totalChars
 
     local function getPartialText(count)
@@ -388,7 +431,7 @@ task.spawn(function()
         end
         
         if count > 12 then
-            local spaceAndVer = string.sub(" [v6.3.3]", 1, count - 12)
+            local spaceAndVer = string.sub(" [v6.5.0]", 1, count - 12)
             res = res .. '<font color="#AAAAAA">' .. spaceAndVer .. '</font>'
         end
         
@@ -399,7 +442,7 @@ task.spawn(function()
         WatermarkLabel.Text = getPartialText(i)
         task.wait(charDelay)
     end
-    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.3.3]</font>'
+    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.5.0]</font>'
 
     local currentAbsPos = WatermarkContainer.AbsolutePosition
     WatermarkContainer.AnchorPoint = Vector2.new(0, 0)
@@ -443,7 +486,7 @@ task.spawn(function()
 
     for index, rowFrame in ipairs(controlRowFrames) do
         if rowFrame then
-            task.delay((index - 1) * 0.04 + 0.04, function()
+            task.delay((index - 1) * 0.03 + 0.04, function()
                 rowFrame.Visible = true
                 local rowTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
@@ -476,8 +519,9 @@ PopulateKeybindsDisplay = function()
         {"Aimbot", "Aimbot", ScriptSense.Config.Keybinds.Aimbot},
         {"Godmode", "Godmode", ScriptSense.Config.Keybinds.Godmode},
         {"Fly", "Fly", ScriptSense.Config.Keybinds.Fly},
-        {"Skeleton esp", "Skeletonesp", ScriptSense.Config.Keybinds.Skeletonesp},
+        {"Skeleton esp", "Skeleton", ScriptSense.Config.Keybinds.Skeleton},
         {"Anti-Aim", "AntiAim", ScriptSense.Config.Keybinds.AntiAim},
+        {"Speedhack", "Speedhack", ScriptSense.Config.Keybinds.Speedhack},
         {"TouchFling", "TouchFling", ScriptSense.Config.Keybinds.TouchFling},
         {"Menu Toggle", "MenuToggle", ScriptSense.Config.Keybinds.MenuToggle},
     }
@@ -510,10 +554,10 @@ PopulateKeybindsDisplay = function()
         padding.Parent = btn
 
         if activeRebindKey == configKey then
-            btn.Text = "  [ " .. labelName .. " ] -> Press any key..."
+            btn.Text = "   [ " .. labelName .. " ] -> Press any key..."
             btn.TextColor3 = Color3.fromRGB(255, 100, 100)
         else
-            btn.Text = "  " .. labelName .. " -> [" .. string.upper(GetKeyName(keyCode)) .. "]"
+            btn.Text = "   " .. labelName .. " -> [" .. string.upper(GetKeyName(keyCode)) .. "]"
         end
 
         btn.MouseButton1Click:Connect(function()
@@ -540,7 +584,7 @@ local function RefreshPlayerTeleportList()
             pBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
             pBtn.TextSize = 14
             pBtn.Font = Enum.Font.Gotham
-            pBtn.Text = "  Teleport to -> " .. playerObj.Name
+            pBtn.Text = "   Teleport to -> " .. playerObj.Name
             pBtn.TextXAlignment = Enum.TextXAlignment.Left
             pBtn.Parent = TeleportWindow
 
@@ -563,6 +607,47 @@ end
 Players.PlayerAdded:Connect(RefreshPlayerTeleportList)
 Players.PlayerRemoving:Connect(RefreshPlayerTeleportList)
 RefreshPlayerTeleportList()
+
+-- Input Listener for Binds & Rebinding
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if activeRebindKey then
+        ScriptSense.Config.Keybinds[activeRebindKey] = input.KeyCode
+        activeRebindKey = nil
+        if KeybindsMenuWindow.Visible then
+            PopulateKeybindsDisplay()
+        end
+        UpdatePanelUI()
+        return
+    end
+
+    if input.KeyCode == ScriptSense.Config.Keybinds.Wallhack then
+        ScriptSense.Config.WallhackEnabled = not ScriptSense.Config.WallhackEnabled
+    elseif input.KeyCode == ScriptSense.Config.Keybinds.Aimbot then
+        if not IsRobloxMenuOpen() then
+            ScriptSense.Config.AimbotEnabled = not ScriptSense.Config.AimbotEnabled
+        end
+    elseif input.KeyCode == ScriptSense.Config.Keybinds.Godmode then
+        ScriptSense.Config.GodmodeEnabled = not ScriptSense.Config.GodmodeEnabled
+    elseif input.KeyCode == ScriptSense.Config.Keybinds.Fly then
+        ScriptSense.Config.FlyEnabled = not ScriptSense.Config.FlyEnabled
+    elseif input.KeyCode == ScriptSense.Config.Keybinds.Skeleton then
+        ScriptSense.Config.SkeletonEspEnabled = not ScriptSense.Config.SkeletonEspEnabled
+    elseif input.KeyCode == ScriptSense.Config.Keybinds.AntiAim then
+        ScriptSense.Config.AntiAimEnabled = not ScriptSense.Config.AntiAimEnabled
+    elseif input.KeyCode == ScriptSense.Config.Keybinds.Speedhack then
+        ScriptSense.Config.SpeedhackEnabled = not ScriptSense.Config.SpeedhackEnabled
+    elseif input.KeyCode == ScriptSense.Config.Keybinds.TouchFling then
+        ScriptSense.Config.TouchFlingEnabled = not ScriptSense.Config.TouchFlingEnabled
+        if ScriptSense.Config.TouchFlingEnabled then
+            startFlingThread()
+        end
+    elseif input.KeyCode == ScriptSense.Config.Keybinds.MenuToggle then
+        ToggleKeybindsMenu()
+    end
+    UpdatePanelUI()
+end)
 
 -- 1. Wallhack Engine
 RunService.Stepped:Connect(function()
@@ -628,7 +713,20 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 3. TouchFling Engine
+-- 3. Speedhack Engine
+RunService.Stepped:Connect(function()
+    if ScriptSense.Config.SpeedhackEnabled then
+        local character = LocalPlayer.Character
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = ScriptSense.Config.SpeedhackSpeed
+            end
+        end
+    end
+end)
+
+-- 4. TouchFling Engine
 if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
     local detection = Instance.new("Decal")
     detection.Name = "juisdfj0i32i0eidsuf0iok"
@@ -660,7 +758,7 @@ startFlingThread = function()
     coroutine.resume(flingThread)
 end
 
--- 4. Skeleton & White 2D Box ESP Rendering Engine
+-- 5. Skeleton & Box ESP Rendering Engine
 local SkeletonCacheRegistry = {}
 local function PurgeSkeletonCache(playerTarget)
     if SkeletonCacheRegistry[playerTarget] then
@@ -706,7 +804,6 @@ RunService.RenderStepped:Connect(function()
                 end
 
                 local cache = SkeletonCacheRegistry[playerObj]
-
                 local headTop = head.Position + Vector3.new(0, 0.5, 0)
                 local footBottom = hrp.Position - Vector3.new(0, 3, 0)
 
@@ -786,7 +883,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 5. Anti-Aim Engine
+-- 6. Anti-Aim (Spinbot) Engine with Adjustable Speed
 RunService.Heartbeat:Connect(function()
     if ScriptSense.Config.AntiAimEnabled then
         local character = LocalPlayer.Character
@@ -799,7 +896,7 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- 6. Godmode Engine
+-- 7. Godmode Engine
 RunService.Stepped:Connect(function()
     if ScriptSense.Config.GodmodeEnabled then
         local character = LocalPlayer.Character
@@ -812,23 +909,23 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- 7. Aimbot Engine
+-- 8. Aimbot Engine
 local function GetClosestPlayerToCursor()
     local closestPlayer = nil
     local shortestDistance = ScriptSense.Config.AimbotFovRadius
+    local mousePos = UserInputService:GetMouseLocation()
 
     for _, playerObj in ipairs(Players:GetPlayers()) do
         if playerObj ~= LocalPlayer and playerObj.Character then
             local humanoid = playerObj.Character:FindFirstChildOfClass("Humanoid")
             local head = playerObj.Character:FindFirstChild("Head")
             if humanoid and humanoid.Health > 0 and head then
-                local screenPoint, onScreen = Camera:WorldToViewportPoint(head.Position)
+                local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
                 if onScreen then
-                    local mousePos = UserInputService:GetMouseLocation()
-                    local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - mousePos).Magnitude
+                    local distance = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
                     if distance < shortestDistance then
                         shortestDistance = distance
-                        closestPlayer = playerObj
+                        closestPlayer = head
                     end
                 end
             end
@@ -838,83 +935,10 @@ local function GetClosestPlayerToCursor()
 end
 
 RunService.RenderStepped:Connect(function()
-    if IsRobloxMenuOpen() then return end
-    if ScriptSense.Config.AimbotEnabled then
-        local target = GetClosestPlayerToCursor()
-        if target and target.Character and target.Character:FindFirstChild("Head") then
-            local headPos = target.Character.Head.Position
-            Camera.CFrame = Camera.CFrame:Lerp(CFrame.new(Camera.CFrame.Position, headPos), 1 / ScriptSense.Config.AimbotSmoothness)
+    if ScriptSense.Config.AimbotEnabled and not IsRobloxMenuOpen() then
+        local targetHead = GetClosestPlayerToCursor()
+        if targetHead then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
         end
     end
 end)
-
--- GUI Sync Loop
-RunService.RenderStepped:Connect(function()
-    if UIComponentRegistry["wallhack"] then 
-        UIComponentRegistry["wallhack"].Text = "wallhack: " .. (ScriptSense.Config.WallhackEnabled and "on" or "off") .. " | bind: " .. GetKeyName(ScriptSense.Config.Keybinds.Wallhack) 
-    end
-    if UIComponentRegistry["aimbot"] then 
-        UIComponentRegistry["aimbot"].Text = "aimbot: " .. (ScriptSense.Config.AimbotEnabled and "on" or "off") .. " | bind: " .. GetKeyName(ScriptSense.Config.Keybinds.Aimbot) 
-    end
-    if UIComponentRegistry["godmode"] then 
-        UIComponentRegistry["godmode"].Text = "godmode: " .. (ScriptSense.Config.GodmodeEnabled and "on" or "off") .. " | bind: " .. GetKeyName(ScriptSense.Config.Keybinds.Godmode) 
-    end
-    if UIComponentRegistry["fly"] then 
-        UIComponentRegistry["fly"].Text = "fly: " .. (ScriptSense.Config.FlyEnabled and "on" or "off") .. " | bind: " .. GetKeyName(ScriptSense.Config.Keybinds.Fly) 
-    end
-    if UIComponentRegistry["skeleton"] then 
-        UIComponentRegistry["skeleton"].Text = "skeleton+box: " .. (ScriptSense.Config.SkeletonEspEnabled and "on" or "off") .. " | bind: " .. GetKeyName(ScriptSense.Config.Keybinds.Skeleton) 
-    end
-    if UIComponentRegistry["anti-aim"] then 
-        UIComponentRegistry["anti-aim"].Text = "anti-aim: " .. (ScriptSense.Config.AntiAimEnabled and "on" or "off") .. " | bind: " .. GetKeyName(ScriptSense.Config.Keybinds.AntiAim) 
-    end
-    if UIComponentRegistry["touchfling"] then 
-        UIComponentRegistry["touchfling"].Text = "touchfling: " .. (ScriptSense.Config.TouchFlingEnabled and "on" or "off") .. " | bind: " .. GetKeyName(ScriptSense.Config.Keybinds.TouchFling) 
-    end
-    if UIComponentRegistry["menutoggle"] then
-        UIComponentRegistry["menutoggle"].Text = "keybinds menu | bind: " .. GetKeyName(ScriptSense.Config.Keybinds.MenuToggle)
-    end
-end)
-
--- Keybind Listener
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.UserInputType == Enum.UserInputType.Keyboard then
-        if UserInputService:GetFocusedTextBox() then return end
-
-        if activeRebindKey then
-            if input.KeyCode == Enum.KeyCode.Escape then
-                activeRebindKey = nil
-            elseif input.KeyCode ~= Enum.KeyCode.Unknown then
-                ScriptSense.Config.Keybinds[activeRebindKey] = input.KeyCode
-                activeRebindKey = nil
-            end
-            PopulateKeybindsDisplay()
-            return
-        end
-
-        if input.KeyCode == ScriptSense.Config.Keybinds.Wallhack then
-            ScriptSense.Config.WallhackEnabled = not ScriptSense.Config.WallhackEnabled
-        elseif input.KeyCode == ScriptSense.Config.Keybinds.Aimbot then
-            if not IsRobloxMenuOpen() then
-                ScriptSense.Config.AimbotEnabled = not ScriptSense.Config.AimbotEnabled
-            end
-        elseif input.KeyCode == ScriptSense.Config.Keybinds.Godmode then
-            ScriptSense.Config.GodmodeEnabled = not ScriptSense.Config.GodmodeEnabled
-        elseif input.KeyCode == ScriptSense.Config.Keybinds.Fly then
-            ScriptSense.Config.FlyEnabled = not ScriptSense.Config.FlyEnabled
-        elseif input.KeyCode == ScriptSense.Config.Keybinds.Skeleton then
-            ScriptSense.Config.SkeletonEspEnabled = not ScriptSense.Config.SkeletonEspEnabled
-        elseif input.KeyCode == ScriptSense.Config.Keybinds.AntiAim then
-            ScriptSense.Config.AntiAimEnabled = not ScriptSense.Config.AntiAimEnabled
-        elseif input.KeyCode == ScriptSense.Config.Keybinds.TouchFling then
-            ScriptSense.Config.TouchFlingEnabled = not ScriptSense.Config.TouchFlingEnabled
-            if ScriptSense.Config.TouchFlingEnabled then
-                startFlingThread()
-            end
-        elseif input.KeyCode == ScriptSense.Config.Keybinds.MenuToggle then
-            ToggleKeybindsMenu()
-        end
-    end
-end)
-
-print("[ScriptSense Enterprise v6.3.3]: Loaded successfully with 2s total text appearance duration.")
