@@ -1,11 +1,12 @@
 --[========================================================================================[
     PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION
-    VERSION: 6.6.2 [BLACK AUTO JUMP UI FIX]
-    DESCRIPTION: Fixed Auto Jump UI invisibility bug and set row style to solid black.
+    VERSION: 6.6.3 [FULL FIX & INTEGRATION]
+    DESCRIPTION: Fixed Fly + ESP compatibility, white Skeleton & Box ESP integration, 
+                 fixed Auto Jump, updated Aimbot block-distance detection (10 blocks = 40 studs).
 --]========================================================================================]
 
 local ScriptSense = {}
-ScriptSense.Version = "6.6.2"
+ScriptSense.Version = "6.6.3"
 ScriptSense.Active = true
 
 -- Services Retrieval
@@ -42,7 +43,7 @@ ScriptSense.Config = {
     WallhackEnabled = false,
     GodmodeEnabled = false,
     FlyEnabled = false,
-    SkeletonEspEnabled = false,
+    SkeletonEspEnabled = false, -- Включает скелет и белый бокс вместе
     AntiAimEnabled = false,
     AutoJumpEnabled = false,
     SpeedhackEnabled = false,
@@ -54,7 +55,7 @@ ScriptSense.Config = {
     
     AimbotSmoothness = 4,
     AimbotFovRadius = 150,
-    AimbotMaxDistance = 1000, 
+    AimbotMaxBlocks = 10, -- 10 блоков (40 studs)
     CurrentSpinAngle = 0,
 
     Keybinds = {
@@ -325,18 +326,17 @@ local function CreateControlInputRow(labelText, initialValue, callback)
     return rowFrame, textBox, label
 end
 
--- CUSTOM BLACK ROW BUILDER FOR AUTO JUMP
 local function CreateBlackIndicatorRow(labelText, callback)
     local rowFrame = Instance.new("Frame")
     rowFrame.Size = UDim2.new(1, 0, 0, 32)
-    rowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0) -- ПОЛНОСТЬЮ ЧЕРНЫЙ ФОН ПЛАШКИ
+    rowFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     rowFrame.BackgroundTransparency = 0
     rowFrame.BorderSizePixel = 0
     rowFrame.Visible = false
     rowFrame.Parent = MainControlPanel
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(60, 60, 60) -- Серый контур плашки
+    stroke.Color = Color3.fromRGB(60, 60, 60)
     stroke.Thickness = 1
     stroke.Transparency = 1
     stroke.Parent = rowFrame
@@ -404,8 +404,8 @@ local _, aimbotFovBox = CreateControlInputRow("aimbot fov size:", ScriptSense.Co
     ScriptSense.Config.AimbotFovRadius = val
 end)
 
-local _, aimbotDistBox = CreateControlInputRow("aimbot max dist:", ScriptSense.Config.AimbotMaxDistance, function(val)
-    ScriptSense.Config.AimbotMaxDistance = val
+local _, aimbotDistBox = CreateControlInputRow("aimbot max blocks:", ScriptSense.Config.AimbotMaxBlocks, function(val)
+    ScriptSense.Config.AimbotMaxBlocks = val
 end)
 
 local _, godmodeRowBtn = CreateControlRow("godmode: off", function()
@@ -428,7 +428,6 @@ local _, antiAimRowBtn = CreateControlRow("anti-aim (spin): off", function()
     UpdatePanelUI()
 end)
 
--- AUTO JUMP ROW (Черный фон)
 local autoJumpRow, autoJumpInd = CreateBlackIndicatorRow("auto jump", function()
     ScriptSense.Config.AutoJumpEnabled = not ScriptSense.Config.AutoJumpEnabled
     UpdatePanelUI()
@@ -466,7 +465,6 @@ UpdatePanelUI = function()
     skeletonRowBtn.Text = "skeleton esp: " .. (ScriptSense.Config.SkeletonEspEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Skeleton) .. "]"
     antiAimRowBtn.Text = "anti-aim (spin): " .. (ScriptSense.Config.AntiAimEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.AntiAim) .. "]"
     
-    -- Auto Jump UI Status (Виден всегда)
     if autoJumpRow then 
         autoJumpRow.Visible = true 
         autoJumpInd.BackgroundColor3 = ScriptSense.Config.AutoJumpEnabled and Color3.fromRGB(50, 255, 50) or Color3.fromRGB(20, 20, 20)
@@ -482,7 +480,7 @@ UpdatePanelUI()
 
 -- Intro Sequence
 task.spawn(function()
-    local fullText = "SCRIPT SENSE [v6.6.2]"
+    local fullText = "SCRIPT SENSE [v6.6.3]"
     local totalChars = #fullText
     local charDelay = 2.0 / totalChars
 
@@ -490,7 +488,7 @@ task.spawn(function()
         local scriptPart = string.sub("SCRIPT", 1, math.min(count, 6))
         local res = '<font color="#FFFFFF">' .. scriptPart .. '</font>'
         if count > 6 then res = res .. '<font color="#FF0000">' .. string.sub(" SENSE", 1, count - 6) .. '</font>' end
-        if count > 12 then res = res .. '<font color="#AAAAAA">' .. string.sub(" [v6.6.2]", 1, count - 12) .. '</font>' end
+        if count > 12 then res = res .. '<font color="#AAAAAA">' .. string.sub(" [v6.6.3]", 1, count - 12) .. '</font>' end
         return res
     end
 
@@ -498,7 +496,7 @@ task.spawn(function()
         WatermarkLabel.Text = getPartialText(i)
         task.wait(charDelay)
     end
-    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.6.2]</font>'
+    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.6.3]</font>'
 
     local currentAbsPos = WatermarkContainer.AbsolutePosition
     WatermarkContainer.AnchorPoint = Vector2.new(0, 0)
@@ -532,7 +530,6 @@ task.spawn(function()
             data.Frame.Visible = true
             local rowTween = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             
-            -- Черный фон для Auto Jump не размываем прозрачностью
             if data.Frame ~= autoJumpRow then
                 TweenService:Create(data.Frame, rowTween, { BackgroundTransparency = 0.2 }):Play()
             else
@@ -678,7 +675,45 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 3. Anti-Aim (Spin) & Auto Jump Engine
+-- 3. Fly Engine (Устойчивый полет без конфликтов)
+local flyBV, flyBG
+RunService.Heartbeat:Connect(function()
+    local character = LocalPlayer.Character
+    if not character then return end
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not root then return end
+
+    if ScriptSense.Config.FlyEnabled then
+        if not flyBV then
+            flyBV = Instance.new("BodyVelocity")
+            flyBV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            flyBV.Parent = root
+        end
+        if not flyBG then
+            flyBG = Instance.new("BodyGyro")
+            flyBG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            flyBG.P = 9e4
+            flyBG.Parent = root
+        end
+
+        flyBG.CFrame = Camera.CFrame
+        local moveDir = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - Camera.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Camera.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+
+        if moveDir.Magnitude > 0 then moveDir = moveDir.Unit end
+        flyBV.Velocity = moveDir * ScriptSense.Config.FlySpeed
+    else
+        if flyBV then flyBV:Destroy() flyBV = nil end
+        if flyBG then flyBG:Destroy() flyBG = nil end
+    end
+end)
+
+-- 4. Anti-Aim & Independent Auto Jump Engine
 RunService.Heartbeat:Connect(function()
     local character = LocalPlayer.Character
     if character then
@@ -691,20 +726,128 @@ RunService.Heartbeat:Connect(function()
             end
         end
         
-        -- Auto Jump Logic (Независимо от Anti-Aim)
+        -- Auto Jump
         if ScriptSense.Config.AutoJumpEnabled then
             local humanoid = character:FindFirstChildOfClass("Humanoid")
             if humanoid then
-                local state = humanoid:GetState()
-                if state ~= Enum.HumanoidStateType.Freefall and state ~= Enum.HumanoidStateType.Jumping then
-                    humanoid.Jump = true
-                end
+                humanoid.Jump = true
             end
         end
     end
 end)
 
--- 4. Aimbot & Perfect FOV Circle Engine
+-- 5. Integrated White Skeleton & White Box ESP Engine
+local EspCache = {}
+local function ClearEspForPlayer(plr)
+    if EspCache[plr] then
+        for _, obj in pairs(EspCache[plr]) do
+            if typeof(obj) == "table" then
+                for _, subObj in ipairs(obj) do pcall(function() subObj:Remove() end) end
+            else
+                pcall(function() obj:Remove() end)
+            end
+        end
+        EspCache[plr] = nil
+    end
+end
+
+Players.PlayerRemoving:Connect(ClearEspForPlayer)
+
+RunService.RenderStepped:Connect(function()
+    if not ScriptSense.Config.SkeletonEspEnabled then
+        for _, cache in pairs(EspCache) do
+            if cache.Box then cache.Box.Visible = false end
+            if cache.Lines then
+                for _, line in ipairs(cache.Lines) do line.Visible = false end
+            end
+        end
+        return
+    end
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            if not EspCache[plr] then
+                local box = Drawing.new("Square")
+                box.Color = Color3.fromRGB(255, 255, 255)
+                box.Thickness = 1.5
+                box.Filled = false
+                box.Visible = false
+
+                local lines = {}
+                for i = 1, 15 do
+                    local l = Drawing.new("Line")
+                    l.Color = Color3.fromRGB(255, 255, 255)
+                    l.Thickness = 1.5
+                    l.Visible = false
+                    table.insert(lines, l)
+                end
+                EspCache[plr] = { Box = box, Lines = lines }
+            end
+
+            local cache = EspCache[plr]
+            local box = cache.Box
+            local lines = cache.Lines
+
+            local char = plr.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+
+            if char and hum and hum.Health > 0 and root then
+                local rootPos, onScreen = Camera:WorldToViewportPoint(root.Position)
+                if onScreen then
+                    local head = char:FindFirstChild("Head")
+                    local headPos = head and Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0)) or Camera:WorldToViewportPoint(root.Position + Vector3.new(0, 3, 0))
+                    local legPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3, 0))
+
+                    local height = math.abs(headPos.Y - legPos.Y)
+                    local width = height * 0.65
+
+                    box.Size = Vector2.new(width, height)
+                    box.Position = Vector2.new(rootPos.X - width / 2, headPos.Y)
+                    box.Visible = true
+
+                    local isR15 = hum.RigType == Enum.HumanoidRigType.R15
+                    local pairsList = isR15 and {
+                        {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"}, {"LowerTorso", "HumanoidRootPart"},
+                        {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
+                        {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
+                        {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
+                        {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"}
+                    } or {
+                        {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"},
+                        {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
+                    }
+
+                    local lineIdx = 1
+                    for _, p in ipairs(pairsList) do
+                        local partA = char:FindFirstChild(p[1])
+                        local partB = char:FindFirstChild(p[2])
+                        if partA and partB and lineIdx <= #lines then
+                            local posA, visA = Camera:WorldToViewportPoint(partA.Position)
+                            local posB, visB = Camera:WorldToViewportPoint(partB.Position)
+                            if visA or visB then
+                                lines[lineIdx].From = Vector2.new(posA.X, posA.Y)
+                                lines[lineIdx].To = Vector2.new(posB.X, posB.Y)
+                                lines[lineIdx].Visible = true
+                                lineIdx = lineIdx + 1
+                            end
+                        end
+                    end
+
+                    for i = lineIdx, #lines do lines[i].Visible = false end
+                else
+                    box.Visible = false
+                    for _, l in ipairs(lines) do l.Visible = false end
+                end
+            else
+                box.Visible = false
+                for _, l in ipairs(lines) do l.Visible = false end
+            end
+        end
+    end
+end)
+
+-- 6. Aimbot Engine (10 Blocks = 40 Studs Detection)
 local FovCircle
 if Drawing and Drawing.new then
     FovCircle = Drawing.new("Circle")
@@ -719,14 +862,17 @@ local function GetClosestPlayerToCursor()
     local closestPlayer = nil
     local shortestDistance = ScriptSense.Config.AimbotFovRadius
     local mousePos = UserInputService:GetMouseLocation()
+    local maxStudsDistance = ScriptSense.Config.AimbotMaxBlocks * 4 -- 1 блок = 4 студа
+
+    local myPos = (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")) and LocalPlayer.Character.HumanoidRootPart.Position or Camera.CFrame.Position
 
     for _, playerObj in ipairs(Players:GetPlayers()) do
         if playerObj ~= LocalPlayer and playerObj.Character then
             local humanoid = playerObj.Character:FindFirstChildOfClass("Humanoid")
             local head = playerObj.Character:FindFirstChild("Head")
             if humanoid and humanoid.Health > 0 and head then
-                local distance3D = (Camera.CFrame.Position - head.Position).Magnitude
-                if distance3D <= ScriptSense.Config.AimbotMaxDistance then
+                local distance3D = (myPos - head.Position).Magnitude
+                if distance3D <= maxStudsDistance then
                     local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
                     if onScreen then
                         local distance2D = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
@@ -759,7 +905,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Godmode Engine
+-- 7. Godmode Engine
 RunService.Stepped:Connect(function()
     if ScriptSense.Config.GodmodeEnabled then
         local character = LocalPlayer.Character
@@ -767,3 +913,20 @@ RunService.Stepped:Connect(function()
         if humanoid then humanoid.Health = humanoid.MaxHealth end
     end
 end)
+
+-- 8. TouchFling Thread Init
+startFlingThread = function()
+    task.spawn(function()
+        while ScriptSense.Config.TouchFlingEnabled do
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                local vel = root.Velocity
+                root.Velocity = Vector3.new(0, 10000, 0)
+                RunService.RenderStepped:Wait()
+                root.Velocity = vel
+            end
+            task.wait()
+        end
+    end)
+end
