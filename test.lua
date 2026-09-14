@@ -1,11 +1,11 @@
 --[========================================================================================[
-    PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION (FIXED & ENHANCED)
-    VERSION: 6.5.0 [PRODUCTION GRADE]
-    DESCRIPTION: Added adjustable Spin Speed, Speedhack, and Speedhack Speed control.
+    PROJECT: SCRIPT SENSE ULTIMATE SUITE - ENTERPRISE EDITION (FIXED & CUSTOM SPEED)
+    VERSION: 6.5.1 [PRODUCTION GRADE]
+    DESCRIPTION: Fixed speedhack toggle off and added custom speed input boxes.
 --]========================================================================================]
 
 local ScriptSense = {}
-ScriptSense.Version = "6.5.0"
+ScriptSense.Version = "6.5.1"
 ScriptSense.Active = true
 
 -- Services Retrieval
@@ -167,7 +167,7 @@ ArrowStroke.Parent = MenuToggleArrow
 -- Main Control Panel Frame
 local MainControlPanel = Instance.new("Frame")
 MainControlPanel.Name = "MainControlPanel"
-MainControlPanel.Size = UDim2.new(0, 250, 0, 560)
+MainControlPanel.Size = UDim2.new(0, 260, 0, 520)
 MainControlPanel.Position = UDim2.new(0, 20, 0, 65)
 MainControlPanel.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
 MainControlPanel.BorderSizePixel = 0
@@ -284,6 +284,65 @@ local function CreateControlRow(parent, posY, initialText, callback)
     return rowFrame, button
 end
 
+local function CreateControlInputRow(parent, posY, labelText, initialValue, callback)
+    local rowFrame = Instance.new("Frame")
+    rowFrame.Size = UDim2.new(1, -20, 0, 32)
+    rowFrame.Position = UDim2.new(0, 10, 0, posY)
+    rowFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    rowFrame.BackgroundTransparency = 1
+    rowFrame.BorderSizePixel = 0
+    rowFrame.Visible = false
+    rowFrame.Parent = parent
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(45, 45, 45)
+    stroke.Thickness = 1
+    stroke.Transparency = 1
+    stroke.Parent = rowFrame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = Color3.fromRGB(230, 230, 230)
+    label.TextTransparency = 1
+    label.TextSize = 12
+    label.Font = Enum.Font.GothamMedium
+    label.Text = "   " .. labelText
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = rowFrame
+
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(0.4, -10, 1, -6)
+    textBox.Position = UDim2.new(0.6, 0, 0, 3)
+    textBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    textBox.BackgroundTransparency = 1
+    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.TextTransparency = 1
+    textBox.TextSize = 12
+    textBox.Font = Enum.Font.GothamBold
+    textBox.Text = tostring(initialValue)
+    textBox.ClearTextOnFocus = false
+    textBox.Parent = rowFrame
+
+    local boxStroke = Instance.new("UIStroke")
+    boxStroke.Color = Color3.fromRGB(60, 60, 60)
+    boxStroke.Thickness = 1
+    boxStroke.Transparency = 1
+    boxStroke.Parent = textBox
+
+    textBox.FocusLost:Connect(function()
+        local num = tonumber(textBox.Text)
+        if num then
+            callback(num)
+        else
+            textBox.Text = tostring(initialValue)
+        end
+    end)
+
+    table.insert(controlRowFrames, rowFrame)
+    return rowFrame, textBox, label
+end
+
 local startFlingThread
 local activeRebindKey = nil
 
@@ -297,13 +356,13 @@ end
 local UpdatePanelUI
 
 -- Populate Main Control Panel Rows
-local verticalOffset = 12
+local verticalOffset = 10
 
 local _, wallhackRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "wallhack: off", function()
     ScriptSense.Config.WallhackEnabled = not ScriptSense.Config.WallhackEnabled
     UpdatePanelUI()
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 local _, aimbotRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "aimbot: off", function()
     if not IsRobloxMenuOpen() then
@@ -311,55 +370,47 @@ local _, aimbotRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "aimb
         UpdatePanelUI()
     end
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 local _, godmodeRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "godmode: off", function()
     ScriptSense.Config.GodmodeEnabled = not ScriptSense.Config.GodmodeEnabled
     UpdatePanelUI()
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 local _, flyRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "fly: off", function()
     ScriptSense.Config.FlyEnabled = not ScriptSense.Config.FlyEnabled
     UpdatePanelUI()
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 local _, skeletonRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "skeleton esp: off", function()
     ScriptSense.Config.SkeletonEspEnabled = not ScriptSense.Config.SkeletonEspEnabled
     UpdatePanelUI()
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 local _, antiAimRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "anti-aim (spin): off", function()
     ScriptSense.Config.AntiAimEnabled = not ScriptSense.Config.AntiAimEnabled
     UpdatePanelUI()
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
-local spinSpeeds = {10, 25, 50, 100, 200, 400}
-local spinSpeedIndex = 2
-local _, spinSpeedRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "spin speed: 25", function()
-    spinSpeedIndex = (spinSpeedIndex % #spinSpeeds) + 1
-    ScriptSense.Config.SpinSpeed = spinSpeeds[spinSpeedIndex]
-    UpdatePanelUI()
+local _, spinSpeedBox = CreateControlInputRow(MainControlPanel, verticalOffset, "spin speed:", ScriptSense.Config.SpinSpeed, function(val)
+    ScriptSense.Config.SpinSpeed = val
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 local _, speedhackRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "speedhack: off", function()
     ScriptSense.Config.SpeedhackEnabled = not ScriptSense.Config.SpeedhackEnabled
     UpdatePanelUI()
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
-local speedhackSpeeds = {16, 24, 32, 50, 80, 120, 200}
-local speedhackSpeedIndex = 3
-local _, speedhackSpeedRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "speedhack speed: 32", function()
-    speedhackSpeedIndex = (speedhackSpeedIndex % #speedhackSpeeds) + 1
-    ScriptSense.Config.SpeedhackSpeed = speedhackSpeeds[speedhackSpeedIndex]
-    UpdatePanelUI()
+local _, speedhackSpeedBox = CreateControlInputRow(MainControlPanel, verticalOffset, "speedhack speed:", ScriptSense.Config.SpeedhackSpeed, function(val)
+    ScriptSense.Config.SpeedhackSpeed = val
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 local _, touchFlingRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "touchfling: off", function()
     ScriptSense.Config.TouchFlingEnabled = not ScriptSense.Config.TouchFlingEnabled
@@ -368,12 +419,12 @@ local _, touchFlingRowBtn = CreateControlRow(MainControlPanel, verticalOffset, "
     end
     UpdatePanelUI()
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 CreateControlRow(MainControlPanel, verticalOffset, "keybinds manager", function()
     ToggleKeybindsMenu()
 end)
-verticalOffset = verticalOffset + 38
+verticalOffset = verticalOffset + 36
 
 -- Teleport Window
 local TeleportWindow = Instance.new("ScrollingFrame")
@@ -406,9 +457,9 @@ UpdatePanelUI = function()
     if flyRowBtn then flyRowBtn.Text = "fly: " .. (ScriptSense.Config.FlyEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Fly) .. "]" end
     if skeletonRowBtn then skeletonRowBtn.Text = "skeleton esp: " .. (ScriptSense.Config.SkeletonEspEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Skeleton) .. "]" end
     if antiAimRowBtn then antiAimRowBtn.Text = "anti-aim (spin): " .. (ScriptSense.Config.AntiAimEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.AntiAim) .. "]" end
-    if spinSpeedRowBtn then spinSpeedRowBtn.Text = "spin speed: " .. ScriptSense.Config.SpinSpeed .. " (click to cycle)" end
+    if spinSpeedBox then spinSpeedBox.Text = tostring(ScriptSense.Config.SpinSpeed) end
     if speedhackRowBtn then speedhackRowBtn.Text = "speedhack: " .. (ScriptSense.Config.SpeedhackEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.Speedhack) .. "]" end
-    if speedhackSpeedRowBtn then speedhackSpeedRowBtn.Text = "speedhack speed: " .. ScriptSense.Config.SpeedhackSpeed .. " (click to cycle)" end
+    if speedhackSpeedBox then speedhackSpeedBox.Text = tostring(ScriptSense.Config.SpeedhackSpeed) end
     if touchFlingRowBtn then touchFlingRowBtn.Text = "touchfling: " .. (ScriptSense.Config.TouchFlingEnabled and "on" or "off") .. " [" .. GetKeyName(ScriptSense.Config.Keybinds.TouchFling) .. "]" end
 end
 
@@ -416,7 +467,7 @@ UpdatePanelUI()
 
 -- Intro Sequence
 task.spawn(function()
-    local fullText = "SCRIPT SENSE [v6.5.0]"
+    local fullText = "SCRIPT SENSE [v6.5.1]"
     local totalChars = #fullText
     local totalDuration = 2.0
     local charDelay = totalDuration / totalChars
@@ -431,7 +482,7 @@ task.spawn(function()
         end
         
         if count > 12 then
-            local spaceAndVer = string.sub(" [v6.5.0]", 1, count - 12)
+            local spaceAndVer = string.sub(" [v6.5.1]", 1, count - 12)
             res = res .. '<font color="#AAAAAA">' .. spaceAndVer .. '</font>'
         end
         
@@ -442,7 +493,7 @@ task.spawn(function()
         WatermarkLabel.Text = getPartialText(i)
         task.wait(charDelay)
     end
-    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.5.0]</font>'
+    WatermarkLabel.Text = '<font color="#FFFFFF">SCRIPT</font> <font color="#FF0000">SENSE</font> <font color="#AAAAAA">[v6.5.1]</font>'
 
     local currentAbsPos = WatermarkContainer.AbsolutePosition
     WatermarkContainer.AnchorPoint = Vector2.new(0, 0)
@@ -497,9 +548,17 @@ task.spawn(function()
                     TweenService:Create(stroke, rowTweenInfo, { Transparency = 0 }):Play()
                 end
 
-                local btn = rowFrame:FindFirstChildOfClass("TextButton")
-                if btn then
-                    TweenService:Create(btn, rowTweenInfo, { TextTransparency = 0 }):Play()
+                for _, child in ipairs(rowFrame:GetChildren()) do
+                    if child:IsA("TextButton") or child:IsA("TextLabel") or child:IsA("TextBox") then
+                        TweenService:Create(child, rowTweenInfo, { TextTransparency = 0 }):Play()
+                        if child:IsA("TextBox") then
+                            TweenService:Create(child, rowTweenInfo, { BackgroundTransparency = 0.5 }):Play()
+                            local bStroke = child:FindFirstChildOfClass("UIStroke")
+                            if bStroke then
+                                TweenService:Create(bStroke, rowTweenInfo, { Transparency = 0 }):Play()
+                            end
+                        end
+                    end
                 end
             end)
         end
@@ -713,15 +772,31 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 3. Speedhack Engine
+-- 3. Speedhack Engine (Fixed toggle off & restored original WalkSpeed)
+local originalWalkSpeed = 16
+local lastSpeedhackState = false
+
 RunService.Stepped:Connect(function()
-    if ScriptSense.Config.SpeedhackEnabled then
-        local character = LocalPlayer.Character
-        if character then
-            local humanoid = character:FindFirstChildOfClass("Humanoid")
-            if humanoid then
+    local character = LocalPlayer.Character
+    if character then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            if ScriptSense.Config.SpeedhackEnabled then
+                if not lastSpeedhackState then
+                    if humanoid.WalkSpeed ~= ScriptSense.Config.SpeedhackSpeed then
+                        originalWalkSpeed = humanoid.WalkSpeed
+                        if originalWalkSpeed == 0 or originalWalkSpeed == ScriptSense.Config.SpeedhackSpeed then
+                            originalWalkSpeed = 16
+                        end
+                    end
+                end
                 humanoid.WalkSpeed = ScriptSense.Config.SpeedhackSpeed
+            else
+                if lastSpeedhackState then
+                    humanoid.WalkSpeed = originalWalkSpeed or 16
+                end
             end
+            lastSpeedhackState = ScriptSense.Config.SpeedhackEnabled
         end
     end
 end)
@@ -883,7 +958,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 6. Anti-Aim (Spinbot) Engine with Adjustable Speed
+-- 6. Anti-Aim (Spinbot) Engine
 RunService.Heartbeat:Connect(function()
     if ScriptSense.Config.AntiAimEnabled then
         local character = LocalPlayer.Character
